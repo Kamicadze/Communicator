@@ -2,7 +2,6 @@
  */
 
 #include "../inc/CWorkQueue.h"
-#include <pthread>
 
 CWorkQueue::CWorkQueue()
 {
@@ -27,7 +26,7 @@ ITask* CWorkQueue::m_nextTask()
 	//locking the mutex
 	pthread_mutex_lock(&qmtx);
 	//looking for work
-	if(finished && tasks.size()==0);
+	if(finished && tasks.size()==0)
 	{
 		o_nt=0;
 	}
@@ -49,7 +48,7 @@ ITask* CWorkQueue::m_nextTask()
 	return o_nt;
 }
 
-void CWorkQueue::m_addTask(Task *o_nt)
+void CWorkQueue::m_addTask(ITask *o_nt)
 {
 	if(!finished)
 	{

@@ -8,14 +8,14 @@
 #include "../pub/ITask.h"
 #include <cstdio>
 #include <queue>
-#include <unistd>
-#include <pthread>
-#include <stdlib>
+#include <unistd.h>
+#include <pthread.h>
+#include <stdlib.h>
 
 //It is a basic queue for tasks with some mutex protecting it
 class CWorkQueue
 {
-	std::queue<Task*>tasks;
+	std::queue<ITask*>tasks;
 	bool finished;
 	pthread_mutex_t qmtx;
 	pthread_cond_t wcond;
@@ -24,9 +24,9 @@ public:
 	CWorkQueue();	
 	~CWorkQueue();
 	//gets task from queue
-	Task *m_nextTask();
+	ITask *m_nextTask();
 	//adds new task to the queue
-	void m_addTask();
+	void m_addTask(ITask*);
 	//sets task queue as finished
 	void m_finished();
 	//checks if there is a work

@@ -1,0 +1,5 @@
+#include<cstdion>
+
+class IThPool
+{
+	

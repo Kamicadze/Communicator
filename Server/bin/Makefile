@@ -8,7 +8,7 @@ tests= ../tests
 CXX= g++
 NAME= Server
 
-OBJECTS= $(SOURCES:.c=.o)
+OBJECTS= $(SOURCES:.cpp=.o)
 
 all: $(NAME)
 

@@ -1,0 +1,1 @@
+g++ -pthread ../tests/src/TWorkQueue.cpp ../src/CWorkQueue.cpp -isystem ~/googletest/googlemock/include -isystem ~/googletest/googletest/include/ ~/googletest/libgtest.a ~/googletest/libgmock.a

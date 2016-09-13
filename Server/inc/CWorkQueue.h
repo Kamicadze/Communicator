@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../pub/ITask.h"
+#include "../pub/IWorkQueue.h"
 #include <cstdio>
 #include <queue>
 #include <unistd.h>
@@ -16,7 +17,7 @@
 class CWorkQueue
 {
 	std::queue<ITask*>tasks;
-	bool finished;
+	bool m_finished;
 	pthread_mutex_t qmtx;
 	pthread_cond_t wcond;
 
@@ -24,13 +25,13 @@ public:
 	CWorkQueue();	
 	~CWorkQueue();
 	//gets task from queue
-	ITask *m_nextTask();
+	ITask *nextTask();
 	//adds new task to the queue
-	void m_addTask(ITask*);
+	int addTask(ITask*);
 	//sets task queue as finished
-	void m_finished();
+	void finished();
 	//checks if there is a work
-	bool m_hasWork();
+	bool hasWork();
 
 
 

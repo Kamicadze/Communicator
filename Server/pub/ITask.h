@@ -14,8 +14,8 @@
 class ITask
 {
 public:
-	ITask();
-	virtual ~ITask();
-	virtual void m_run()=0;
-	virtual void m_showTask()=0;
+	virtual ~ITask(){};
+	virtual void run()=0;
+	virtual int showTask()=0;
 };
+

@@ -3,8 +3,6 @@
 #include <cstdio>
 #include <iostream>
 #include "CWorkQueue.h"
-#include "Globals.h"
-
 CWorkQueue::CWorkQueue()
 {
 	//initialization of mutex to protect the queue

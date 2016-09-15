@@ -1,6 +1,9 @@
+#define private public
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "../inc/MWorkQueue.h"
+#include "MWorkQueue.h"
+#include "CWorkQueue.h"
+#include "MTask.h"
 #include <cstdio>
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -8,30 +11,17 @@ using ::testing::_;
 
 
 
-TEST(AddTaskTest, AddingTaskwalkthrought)
+TEST(FinishedFlagTest, FlagInterpretation)
 {
-	testing::NiceMock<MWorkQueue> que;
-	int i=10;
-	EXPECT_CALL(que, addTask((ITask*)i))
-		.Times(AtLeast(1))
-		.WillOnce(Return(0));
+	CWorkQueue wq;
+	MTask mt;
 
-	que.addTask((ITask*)i);
+	wq.m_finished=true;
+	EXPECT_EQ(wq.addTask(&mt), -1);
 
-	EXPECT_TRUE(que.hasWork()==0);
-
-	EXPECT_CALL(que, nextTask());
-
-	que.nextTask();
-
-	EXPECT_CALL(que, finished());
-	que.finished();
-
-	EXPECT_CALL(que, addTask((ITask*)i))
-		.WillOnce(Return(-1));
-	que.addTask((ITask*)i);
-
-		
+	wq.m_finished=false;
+	EXPECT_EQ(wq.addTask(&mt), 0);
+	EXPECT_EQ(wq.tasks.size(), 1);	
 
 }
 

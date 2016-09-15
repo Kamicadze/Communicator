@@ -6,6 +6,7 @@ CFLAGS= -Wall -g -isystem $(GTEST)/googletest/include \
 LDFLAGS= -pthread 
 LIBS= $(GTEST)/libgtest.a $(GTEST)/libgmock.a
 SOURCES= ../src/main.cpp ../src/CWorkQueue.cpp ../src/CThPool.cpp ../src/CTaskTMP.cpp
+
 INC= ../inc 
 TESTS= ../tests/src/TWorkQueue.cpp
 CXX= g++

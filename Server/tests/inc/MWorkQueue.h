@@ -1,5 +1,7 @@
 #include "gmock/gmock.h"
-#include "../../pub/IWorkQueue.h"
+#define private public
+#include "IWorkQueue.h"
+#pragma once
 
 class MWorkQueue: public IWorkQueue
 {

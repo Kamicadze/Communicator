@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdio>
 #include "ITask.h"
 

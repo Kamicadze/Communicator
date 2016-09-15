@@ -1,10 +1,11 @@
-#define private public
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "MWorkQueue.h"
-#include "CWorkQueue.h"
-#include "MTask.h"
 #include <cstdio>
+#include "MWorkQueue.h"
+#include "MTask.h"
+#define private public
+#include "CWorkQueue.h"
+
 using ::testing::AtLeast;
 using ::testing::Return;
 using ::testing::_;
@@ -15,6 +16,7 @@ TEST(FinishedFlagTest, FlagInterpretation)
 {
 	CWorkQueue wq;
 	MTask mt;
+
 
 	wq.m_finished=true;
 	EXPECT_EQ(wq.addTask(&mt), -1);

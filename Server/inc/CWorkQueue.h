@@ -4,7 +4,7 @@
  */
 
 #pragma once
-
+#include "gtest/gtest_prod.h"
 #include "ITask.h"
 #include "IWorkQueue.h"
 #include <cstdio>
@@ -20,6 +20,8 @@ class CWorkQueue
 	bool m_finished;
 	pthread_mutex_t qmtx;
 	pthread_cond_t wcond;
+	FRIEND_TEST(FinishedFlagTest, FlagInterpretation);
+	FRIEND_TEST(TaskLifeTest, TaskLifeSpan);
 
 public:
 	CWorkQueue();	

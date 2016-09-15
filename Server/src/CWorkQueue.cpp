@@ -34,7 +34,6 @@ ITask* CWorkQueue::nextTask()
 	{
 		if(0==tasks.size())
 		{
-			std::cout<<"i'm w8ing threa:"<<pthread_self()<<std::endl;
 			pthread_cond_wait(&wcond, &qmtx);
 		}
 		o_nt=tasks.front();

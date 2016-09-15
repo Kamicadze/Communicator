@@ -1,10 +1,9 @@
 GTEST= ~/googletest
-CFLAGS= -Wall -g -isystem $(GTEST)/googletest/include \
-	-isystem $(GTEST)/googlemock/include \
+CFLAGS= -Wall -g -isystem ../../Gincludes \
 	-isystem ../inc -isystem ../pub
  
 LDFLAGS= -pthread 
-LIBS= $(GTEST)/libgtest.a $(GTEST)/libgmock.a
+LIBS= ../../Gincludes/libgtest.a ../../Gincludes/libgmock.a
 SOURCES= ../src/main.cpp ../src/CWorkQueue.cpp ../src/CThPool.cpp ../src/CTaskTMP.cpp
 
 INC= ../inc 

@@ -17,10 +17,8 @@ CThPool::~CThPool()
 {
 	o_workQueue.finished();
 	waitForCompletion();
-	cout<<"after wFC"<<endl;
 	for(int i=0;i<m_numThreads;++i)
 	{
-		cout<<"before join"<<endl;
 		pthread_join(m_threads[i], 0);
 		cout<<"Thread: "<<i+1<<"has ended his life"<<endl;
 	}

@@ -19,13 +19,14 @@ CTaskTMP::~CTaskTMP()
 void CTaskTMP::run()
 {
 	int x=30;
+	long int y=0;
 	for(int i=0;i<40;i++)
 	{
 		pthread_mutex_lock(&console_mutex);
-		cout<<"work: "<<x*i<<"for thread: "<<pthread_self()<<endl;
+		y=y+x*i;	
 		pthread_mutex_unlock(&console_mutex);
 	}
-//	sleep(10);
+//	sleep(2);
 }
 
 int CTaskTMP::showTask()

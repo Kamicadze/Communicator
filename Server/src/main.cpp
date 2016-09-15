@@ -10,11 +10,12 @@ using namespace std;
 
 int main()
 {
-	CThPool *tp= new CThPool(2);
-	CTaskTMP *tmp= new CTaskTMP;
-	CTaskTMP *tmp2=new CTaskTMP;	
-	tp->addTask(tmp);
-	tp->addTask(tmp2);
+	CThPool *tp= new CThPool(10);
+	for(int i=0;i<30;i++)
+	{
+		CTaskTMP *tmp= new CTaskTMP;
+		tp->addTask(tmp);
+	}
 	tp->finish();
 	cout<<"main"<<endl;	
 	delete tp;

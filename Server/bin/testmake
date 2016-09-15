@@ -1,6 +1,6 @@
 g++ -pthread ../tests/src/TWorkQueue.cpp ../src/CWorkQueue.cpp \
--isystem ~/Comunicator/Gincludes \
--isystem ~/Comunicator/Server/tests/inc \
--isystem ~/Comunicator/Server/inc \
--isystem ~/Comunicator/Server/pub \
+-isystem ../../Gincludes \
+-isystem ../tests/inc \
+-isystem ../inc \
+-isystem ../pub \
 ../../Gincludes/libgtest.a ../../Gincludes/libgmock.a

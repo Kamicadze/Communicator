@@ -1,14 +1,16 @@
-/*
- */
+///
+///
+///
+ 
 #include <cstdio>
 #include <iostream>
 #include "CWorkQueue.h"
 CWorkQueue::CWorkQueue()
 {
-	//initialization of mutex to protect the queue
+	///initialization of mutex to protect the queue
 	pthread_mutex_init(&qmtx,0);
 
-	//wcond signals when new work is available
+	///wcond signals when new work is available
 	pthread_cond_init(&wcond,0);
 
 }
@@ -23,9 +25,9 @@ ITask* CWorkQueue::nextTask()
 {
 	ITask *o_nt=0;
 
-	//locking the mutex
+	///locking the mutex
 	pthread_mutex_lock(&qmtx);
-	//looking for work
+	///looking for work
 	if(m_finished && 0==tasks.size())
 	{
 		o_nt=0;
@@ -39,11 +41,8 @@ ITask* CWorkQueue::nextTask()
 		o_nt=tasks.front();
 		tasks.pop();
 
-		//for debbuging
-	//	if(o_nt) o_nt->showTask();
-	}
-
-	//unlock mutex
+		}
+	///unlock mutex
 	pthread_mutex_unlock(&qmtx);
 	return o_nt;
 }
@@ -53,12 +52,12 @@ int CWorkQueue::addTask(ITask *o_nt)
 	int return_value=-1;
 	if(!m_finished)
 	{
-		//lock queue
+		///lock queue
 		pthread_mutex_lock(&qmtx);
 		tasks.push(o_nt);
-		//signaling the new work
+		///signaling the new work
 		pthread_cond_signal(&wcond);
-		//unlock mutex
+		///unlock mutex
 		pthread_mutex_unlock(&qmtx);
 		return_value=0;
 	}
@@ -68,8 +67,7 @@ int CWorkQueue::addTask(ITask *o_nt)
 	}
 	return return_value;
 }
-
-//setting the queue to finished
+///setting the queue to finished
 void CWorkQueue::finished()
 {
 	pthread_mutex_lock(&qmtx);
@@ -91,5 +89,4 @@ bool CWorkQueue::hasWork()
 	}
 	return return_value;
 }
-
 

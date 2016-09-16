@@ -1,3 +1,7 @@
+///This class takes care of creating threads and then joining them.
+///Additionaly this class wraps methods of CWorkQueue class to use them next
+///with threads in mind
+///
 #include "CThPool.h"
 #include "Globals.h"
 #include <iostream>
@@ -9,6 +13,8 @@ CThPool::CThPool(int n)
 		m_threads = new pthread_t[n];
 		for(int i=0;i<n;++i)
 		{
+			///creating new thread with function getWork which than
+			///send it to waiting for a real task
 			pthread_create(&(m_threads[i]),0, getWork, &o_workQueue);
 		}
 	}

@@ -9,7 +9,6 @@ using namespace std;
 
 CThPool::CThPool(int n)
 	:m_numThreads(n){
-		cout<<"Creating thpool with"<<n<<"threads"<<endl;
 		m_threads = new pthread_t[n];
 		for(int i=0;i<n;++i)
 		{
@@ -26,7 +25,6 @@ CThPool::~CThPool()
 	for(int i=0;i<m_numThreads;++i)
 	{
 		pthread_join(m_threads[i], 0);
-		cout<<"Thread: "<<i+1<<"has ended his life"<<endl;
 	}
 	delete[] m_threads;
 	

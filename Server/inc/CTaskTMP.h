@@ -8,8 +8,11 @@ using namespace std;
 class CTaskTMP: public ITask
 {
 public:
-	CTaskTMP();
+	CTaskTMP(int);
 	~CTaskTMP();
 	void run();
 	int showTask();
+	void met2();
+	void met1(char);
+	int flag;
 };

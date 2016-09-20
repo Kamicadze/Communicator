@@ -17,6 +17,7 @@
 class CWorkQueue
 {
 	std::queue<ITask*>tasks;
+//	std::queue<std::function<bool(void*)>> que;
 	bool m_finished;
 	pthread_mutex_t qmtx;
 	pthread_cond_t wcond;
@@ -30,6 +31,7 @@ public:
 	ITask *nextTask();
 	//adds new task to the queue
 	int addTask(ITask*);
+//	int addTask(bool (*f)(void*));
 	//sets task queue as finished
 	void finished();
 	//checks if there is a work

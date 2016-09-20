@@ -2,7 +2,7 @@ CFLAGS= -Wall -g  -isystem ../Common \
 	-isystem inc -isystem pub -isystem tests/inc
 LDFLAGS= -pthread
 LIBS= ../Common/libgtest.a ../Common/libgmock.a
-SOURCES= src/main.cpp src/CWorkQueue.cpp src/CThPool.cpp src/CTaskTMP.cpp
+SOURCES= src/main.cpp src/CWorkQueue.cpp src/CThPool.cpp src/CTaskTMP.cpp src/CDatabaseHandler.cpp
 S4T= src/CWorkQueue.cpp
 INC= inc 
 TESTS= tests/src/TWorkQueue.cpp

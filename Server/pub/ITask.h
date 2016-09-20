@@ -16,6 +16,5 @@ class ITask
 public:
 	virtual ~ITask(){};
 	virtual void run()=0;
-	virtual int showTask()=0;
 };
 

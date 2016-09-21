@@ -7,17 +7,23 @@
 using namespace std;
 
 CDatabaseHandler::CDatabaseHandler(int flag, string login)
-	:userLogin(login),
-	flag(flag)
+	:m_userLogin(login),
+	m_flag(flag)
+{
+	pthread_mutex_init(&dbmtx, 0);
+	pthread_cond_init(&dbcond, 0);
+}
+
+CDatabaseHandler::CDatabaseHandler()
 {
 	pthread_mutex_init(&dbmtx, 0);
 	pthread_cond_init(&dbcond, 0);
 }
 
 CDatabaseHandler::CDatabaseHandler(int flag, string login, string password)
-	:flag(flag),
-	userLogin(login),
-	userPassword(password)
+	:m_flag(flag),
+	m_userLogin(login),
+	m_userPassword(password)
 {
 	pthread_mutex_init(&dbmtx, 0);
 	pthread_cond_init(&dbcond, 0);
@@ -169,26 +175,26 @@ bool CDatabaseHandler::isOnline(string log)
 }
 void CDatabaseHandler::run()
 {
-	switch(flag)
+	switch(m_flag)
 	{
 		case 1:
-			createUser(userLogin, userPassword);
+			createUser(m_userLogin, m_userPassword);
 			break;
 
 		case 2:
-			deleteUser(userLogin, userPassword);
+			deleteUser(m_userLogin, m_userPassword);
 			break;
 
 		case 3:
-			authenticate(userLogin, userPassword);
+			authenticate(m_userLogin, m_userPassword);
 			break;
 
 		case 4:
-			findUser(userLogin);
+			findUser(m_userLogin);
 			break;
 
 		case 5:
-			isOnline(userLogin);
+			isOnline(m_userLogin);
 			break;	
 	}
 }

@@ -1,3 +1,4 @@
+#pragma once
 #include "ITask.h"
 class IThPool
 {

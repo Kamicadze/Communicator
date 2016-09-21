@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include <iostream>
 #include <cstdio>
+#include <list>
+
+std::list<std::string> online;
 
 static pthread_mutex_t console_mutex = PTHREAD_MUTEX_INITIALIZER;
 

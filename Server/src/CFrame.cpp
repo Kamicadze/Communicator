@@ -1,7 +1,8 @@
 #include "SFrame.h"
 //#include "C"
 
-
+Frame::Frame()
+{}
 
 
 

@@ -9,11 +9,12 @@ class CDatabaseHandler: public IDatabaseHandler, public ITask
 	private:
 		pthread_mutex_t dbmtx;
 		pthread_cond_t dbcond;
-		int flag;
-		std::string userLogin;
-		std::string userPassword;
+		int m_flag;
+		std::string m_userLogin;
+		std::string m_userPassword;
 
 	public:
+		CDatabaseHandler();
 		CDatabaseHandler(int, std::string);
 		CDatabaseHandler(int, std::string, std::string);
 		~CDatabaseHandler();

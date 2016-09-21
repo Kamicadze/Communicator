@@ -143,6 +143,8 @@ void CConnectionHandler::clientHandler()
 	int dt=static_cast<int>(m_clientFrame.m_dataType);
 	string login, password;
 	CDatabaseHandler o_dbh;
+	uint32_t tmp32;
+	uint8_t tmp8;
 
 
 
@@ -156,15 +158,43 @@ void CConnectionHandler::clientHandler()
 
 			if(true==o_dbh.authenticate(login, password))
 			{
-				online.push_back(login);
-				//TODO: send a succes msg to clien;
-				cout<<"succes"<<endl;		
+				//usersOnline.push_back(login);
+				
+				ss.str(string());	
+				ss.str(m_clientFrame.m_CID);	
+				ss >> m_clientFrame.m_DCID;
+				sprintf(m_clientFrame.m_CID, "Server");
+				tmp32=m_clientFrame.m_sourceAddress;
+				m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
+				m_clientFrame.m_destenationAddress=tmp32;
+
+				tmp8=m_clientFrame.m_sourcePort;
+				m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
+				m_clientFrame.m_destenationPort=tmp8;
+
+				sprintf(m_clientFrame.m_messageData,"Succes");
+
+				write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+
 			}
 			else
 			{
-				//TODO: send a error msg to client;
-				cout<<"error"<<endl;
-			
+				ss.str(string());	
+				ss.str(m_clientFrame.m_CID);	
+				ss >> m_clientFrame.m_DCID;
+				sprintf(m_clientFrame.m_CID, "Server");
+				tmp32=m_clientFrame.m_sourceAddress;
+				m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
+				m_clientFrame.m_destenationAddress=tmp32;
+
+				tmp8=m_clientFrame.m_sourcePort;
+				m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
+				m_clientFrame.m_destenationPort=tmp8;
+
+				sprintf(m_clientFrame.m_messageData, "Wrong Login and/or password");
+
+				write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+
 			}
 
 			break;

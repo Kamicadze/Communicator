@@ -6,7 +6,7 @@
 #include <cstdio>
 #include <list>
 
-std::list<std::string> online;
+//std::list<std::string> usersOnline;
 
 static pthread_mutex_t console_mutex = PTHREAD_MUTEX_INITIALIZER;
 

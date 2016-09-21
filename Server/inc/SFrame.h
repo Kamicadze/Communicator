@@ -10,7 +10,7 @@ struct Frame
 //	unsigned char m_parts;  same with thoes two
 //	unsigned char m_partNumber;
 	uint32_t m_sourceAddress;
-	uint8_t m_soucrePort;
+	uint8_t m_sourcePort;
 	uint32_t m_destenationAddress;
 	uint8_t m_destenationPort;
 //	unsigned char m_messageLength;

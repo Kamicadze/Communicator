@@ -75,7 +75,7 @@ void CConnectionHandler::sendData()
 
 void CConnectionHandler::listening()
 {
-	int port, clilen, newsockfd;
+	int port, clilen, newsockfd, n;
 	m_socketfd=socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in serv_addr, cli_addr;
 	struct Frame cliFrame;
@@ -117,9 +117,11 @@ void CConnectionHandler::listening()
 		exit(1);
 	}
 
-	read(newsockfd, &cliFrame, sizeof(cliFrame));
+	n=read(newsockfd, &cliFrame, sizeof(cliFrame));
+	if(n<0)
+	{
 	//TODO: error handling
-
+	}
 
 	m_tp->addTask(new CConnectionHandler(3, m_tp, newsockfd, cliFrame));
 
@@ -135,9 +137,6 @@ void CConnectionHandler::listening()
 }
 void CConnectionHandler::clientHandler()
 {
-
-	map<std::string, int> usersOnline;
-
 	string buff(reinterpret_cast<char*>(m_clientFrame.m_messageData));
 	istringstream ss;
 	ss.str(buff);	
@@ -158,7 +157,7 @@ void CConnectionHandler::clientHandler()
 
 			if(true==o_dbh.authenticate(login, password))
 			{
-				usersOnline[login]=m_clisocket;
+				m_tp->online[login]=m_clisocket;
 				
 				ss.str(string());	
 				ss.str(m_clientFrame.m_CID);	
@@ -205,6 +204,7 @@ void CConnectionHandler::clientHandler()
 		
 		case 3:
 			//TODO: broadcast msg
+
 			break;
 
 		case 4:
@@ -212,7 +212,7 @@ void CConnectionHandler::clientHandler()
 			break;
 
 		case 5:		///goodbye case
-			usersOnline.erase(login);
+			m_tp->online.erase(login);
 			close(m_clisocket);
 			break;
 	

@@ -103,7 +103,7 @@ void CDatabaseHandler::deleteUser(string login, string password)
 }
 bool CDatabaseHandler::authenticate(string log, string password)
 {
-	bool return_value=false;
+//	bool return_value;
 
 	ifstream dbFile("../db/database.txt");
 	string line, login, pass, onl, ip;
@@ -111,19 +111,23 @@ bool CDatabaseHandler::authenticate(string log, string password)
 	{
 		while((getline(dbFile, line)))
 		{
-		istringstream ss(line);
+			istringstream ss(line);
 
-		ss >> login >> pass >> onl >> ip;
+			ss >> login >> pass >> onl >> ip;
 
-		if(login==log && pass==password)
-		{
-			return_value=true;			
-		}
+			if(login==log && pass==password)
+			{
+	//			return_value=true;
+	//			return return_value;			i
+				return true;
+			}
 		
 		}
-		return return_value;
+	//	return_value=false;
+		return false;
 	}
-	return return_value;
+	//	return return_value;
+	
 }
 bool CDatabaseHandler::findUser(string ln)
 {

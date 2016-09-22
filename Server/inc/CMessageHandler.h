@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string.h>
 #include "SFrame.h"
-
+#include "CThPool.h"
 
 class CMessageHandler
 {
@@ -15,6 +15,7 @@ class CMessageHandler
 	CMessageHandler(std::string);
 	~CMessageHandler();
 	bool createChatRoom(Frame, int);
+	void broadcast();
 	void chatRoomHandler();
 
 

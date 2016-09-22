@@ -4,9 +4,9 @@
 #include <pthread.h>
 #include <iostream>
 #include <cstdio>
-#include <list>
+#include <map>
 
-//std::list<std::string> usersOnline;
+extern std::map<std::string, int> usersOnline;
 
 static pthread_mutex_t console_mutex = PTHREAD_MUTEX_INITIALIZER;
 

@@ -7,8 +7,8 @@
 using namespace std;
 
 CDatabaseHandler::CDatabaseHandler(int flag, string login)
-	:m_userLogin(login),
-	m_flag(flag)
+	:m_flag(flag),
+	m_userLogin(login)
 {
 	pthread_mutex_init(&dbmtx, 0);
 	pthread_cond_init(&dbcond, 0);
@@ -103,6 +103,8 @@ void CDatabaseHandler::deleteUser(string login, string password)
 }
 bool CDatabaseHandler::authenticate(string log, string password)
 {
+	bool return_value=false;
+
 	ifstream dbFile("../db/database.txt");
 	string line, login, pass, onl, ip;
 	if(dbFile)
@@ -115,18 +117,17 @@ bool CDatabaseHandler::authenticate(string log, string password)
 
 		if(login==log && pass==password)
 		{
-			return true;			
+			return_value=true;			
 		}
 		
-
-
 		}
-		return false;
+		return return_value;
 	}
-
+	return return_value;
 }
 bool CDatabaseHandler::findUser(string ln)
 {
+	bool return_value=false;
 	ifstream dbFile("../db/database.txt");
 	string line, login, pass, onl, ip;
 	if(dbFile)
@@ -139,40 +140,41 @@ bool CDatabaseHandler::findUser(string ln)
 
 		if(login==ln)
 		{
-			return true;			
+			return_value=true;			
 		}
 		
 
 
 		}
-		return false;
+		return return_value;
 	}
-
+	return return_value;
 }
 bool CDatabaseHandler::isOnline(string log)
 {
+	bool return_value=false;
+
 	ifstream dbFile("../db/database.txt");
 	string line, login, pass, onl, ip;
 	if(dbFile)
 	{
 		while((getline(dbFile, line)))
 		{
-		istringstream ss(line);
+			istringstream ss(line);
 
-		ss >> login >> pass >> onl >> ip;
+			ss >> login >> pass >> onl >> ip;
 
-		if(login == log && onl=="yes")
-		{
-			return true;			
-		}
+			if(login == log && onl=="yes")
+				{
+					return_value=true;			
+				}
 		
-
-
 		}
-		return false;
+		return return_value;
 	}
-
+	return return_value;
 }
+
 void CDatabaseHandler::run()
 {
 	switch(m_flag)

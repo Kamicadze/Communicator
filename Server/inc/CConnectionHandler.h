@@ -22,4 +22,5 @@ class CConnectionHandler: public IConnectionHandler, public ITask
 		void run();
 		void sendData();
 		void clientHandler();
+		void serverOptions();
 };

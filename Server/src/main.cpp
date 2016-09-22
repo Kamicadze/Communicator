@@ -3,7 +3,7 @@
 #include "CDatabaseHandler.h"
 #include <iostream>
 #include <cstdio>
-#include "CTaskTMP.h"
+
 #include "Globals.h"
 #include "CConnectionHandler.h"
 
@@ -18,10 +18,6 @@ int main()
 	CThPool *tp= new CThPool(10);
 	tp->addTask(new CDatabaseHandler(1, login, password));
 //	tp->finish();
-	cout<<"main"<<endl;	
-//	delete tp;
-//	CConnectionHandler con;
-//	con.listening();
 	tp->addTask(new CConnectionHandler(2, tp));
 	sleep(100);
 //	delete tp;

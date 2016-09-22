@@ -15,24 +15,24 @@ using namespace std;
 
 
 CConnectionHandler::CConnectionHandler(int flag, CThPool *tp, int clisocket)
-	:m_tp(tp),
-	m_flag(flag),
-	m_clisocket(clisocket)
+	:m_flag(flag),
+	m_clisocket(clisocket),
+	m_tp(tp)
 {
 
 }
 
 CConnectionHandler::CConnectionHandler(int flag, CThPool *tp)
-	:m_tp(tp),
-	m_flag(flag)
+	:m_flag(flag),
+	m_tp(tp)
 {
 
 }
 
 CConnectionHandler::CConnectionHandler(int flag, CThPool *tp, int clisock, Frame cliFrame)
 	:m_flag(flag),
-	m_tp(tp),
 	m_clisocket(clisock),
+	m_tp(tp),
 	m_clientFrame(cliFrame)
 {}
 
@@ -63,12 +63,10 @@ void CConnectionHandler::sendData()
 {
 	char buffer[256];
 
-	int i=0;
 	while(1){
 	write(m_clisocket, "got your data", 14);
 	read(m_clisocket, buffer, 255);
 	pthread_mutex_lock(&console_mutex);
-	printf("data: %s %d \n", buffer, pthread_self());	
 	bzero(buffer, 256);
 	pthread_mutex_unlock(&console_mutex);
 	}
@@ -77,11 +75,10 @@ void CConnectionHandler::sendData()
 
 void CConnectionHandler::listening()
 {
-	int port, clilen, newsockfd, n;
+	int port, clilen, newsockfd;
 	m_socketfd=socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in serv_addr, cli_addr;
 	struct Frame cliFrame;
-	char buffer[256];
 	
 	
 
@@ -120,12 +117,13 @@ void CConnectionHandler::listening()
 		exit(1);
 	}
 
-	n=read(newsockfd, &cliFrame, sizeof(cliFrame));
+	read(newsockfd, &cliFrame, sizeof(cliFrame));
+	//TODO: error handling
 
 
 	m_tp->addTask(new CConnectionHandler(3, m_tp, newsockfd, cliFrame));
 
-	newsockfd=NULL;
+	newsockfd=0;
 
 	bzero((char*) &cliFrame, sizeof(cliFrame));
 
@@ -137,6 +135,9 @@ void CConnectionHandler::listening()
 }
 void CConnectionHandler::clientHandler()
 {
+
+	map<std::string, int> usersOnline;
+
 	string buff(reinterpret_cast<char*>(m_clientFrame.m_messageData));
 	istringstream ss;
 	ss.str(buff);	
@@ -150,15 +151,14 @@ void CConnectionHandler::clientHandler()
 
 	switch(dt)
 	{
-		case 1:
-			//TODO: authentication
+		case 1:		///handshake case
 
 			ss >> login >> password;
 
 
 			if(true==o_dbh.authenticate(login, password))
 			{
-				//usersOnline.push_back(login);
+				usersOnline[login]=m_clisocket;
 				
 				ss.str(string());	
 				ss.str(m_clientFrame.m_CID);	
@@ -201,21 +201,29 @@ void CConnectionHandler::clientHandler()
 
 		case 2:
 			//TODO: server option
-			cout<<"";
 			break;
 		
 		case 3:
 			//TODO: broadcast msg
-			cout<<"";
 			break;
 
 		case 4:
-			cout<<"";
 			//TODO: chat room msg
+			break;
+
+		case 5:		///goodbye case
+			usersOnline.erase(login);
+			close(m_clisocket);
 			break;
 	
 	
 	}
-	
+//	cout<<usersOnline.size()<<endl;
 }
 
+void CConnectionHandler::serverOptions()
+{
+	///server option structure in frames massageData
+	///id_of_operation  additional options
+
+}

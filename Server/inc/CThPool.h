@@ -23,4 +23,5 @@ public:
 
 	std::map<std::string, int> online;
 	std::map<std::string, int> broad;
+	std::map<std::string, int> chatRooms;
 };

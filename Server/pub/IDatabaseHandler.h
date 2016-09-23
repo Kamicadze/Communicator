@@ -10,5 +10,4 @@ class IDatabaseHandler
 	virtual void deleteUser(std::string, std::string)=0;
 	virtual bool authenticate(std::string, std::string)=0;
 	virtual bool findUser(std::string)=0;
-	virtual bool isOnline(std::string)=0;
 };

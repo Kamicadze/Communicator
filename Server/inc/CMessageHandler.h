@@ -1,3 +1,4 @@
+#pragma once
 #include <map>
 #include <iostream>
 #include <string.h>
@@ -7,16 +8,18 @@
 class CMessageHandler
 {
 	private:
-	map<std::string, int> m_chatUsers;
+	std::map<std::string, int> m_chatUsers;
 	std::string m_host;
 
 	public:
 	CMessageHandler();
 	CMessageHandler(std::string);
 	~CMessageHandler();
-	bool createChatRoom(Frame, int);
-	void broadcast();
-	void chatRoomHandler();
+	void createChatRoom(Frame, int, CThPool*);
+	void broadcast(CThPool*, int, std::string);
+	void sendToAll(CThPool*, Frame);
+	void chatRoomHandler(std::string, int, std::string, CThPool*);
+	void writeToChat(std::map<std::string, int>, Frame);
 
 
-}
+};

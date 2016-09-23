@@ -3,7 +3,8 @@ CFLAGS= -std=c++11 -Wall -g  -isystem ../Common \
 LDFLAGS= -pthread 
 LIBS= ../Common/libgtest.a ../Common/libgmock.a
 SOURCES= src/main.cpp src/CWorkQueue.cpp src/CThPool.cpp \
-	src/CDatabaseHandler.cpp src/CConnectionHandler.cpp
+	src/CDatabaseHandler.cpp src/CConnectionHandler.cpp \
+	src/CMessageHandler.cpp
 S4T= src/CWorkQueue.cpp
 INC= inc 
 TESTS= tests/src/TWorkQueue.cpp

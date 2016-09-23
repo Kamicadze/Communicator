@@ -9,7 +9,7 @@ using namespace std;
 
 CThPool::CThPool(int n)
 	:m_numThreads(n){
-		online["server"]=5001;
+//		online["server"]=5001;
 		m_threads = new pthread_t[n];
 		for(int i=0;i<n;++i)
 		{

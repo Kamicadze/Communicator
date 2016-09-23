@@ -6,28 +6,10 @@
 #include <string.h>
 using namespace std;
 
-CDatabaseHandler::CDatabaseHandler(int flag, string login)
-	:m_flag(flag),
-	m_userLogin(login)
-{
-	pthread_mutex_init(&dbmtx, 0);
-	pthread_cond_init(&dbcond, 0);
-}
-
 CDatabaseHandler::CDatabaseHandler()
 {
 	pthread_mutex_init(&dbmtx, 0);
 	pthread_cond_init(&dbcond, 0);
-}
-
-CDatabaseHandler::CDatabaseHandler(int flag, string login, string password)
-	:m_flag(flag),
-	m_userLogin(login),
-	m_userPassword(password)
-{
-	pthread_mutex_init(&dbmtx, 0);
-	pthread_cond_init(&dbcond, 0);
-
 }
 
 CDatabaseHandler::~CDatabaseHandler()
@@ -67,9 +49,6 @@ void CDatabaseHandler::createUser(string login, string password)
 }
 void CDatabaseHandler::deleteUser(string login, string password)
 {
-	if(true==authenticate(login, password))
-	{
-
 		string line, log, pass, onl, ip;
 		pthread_mutex_lock(&dbmtx);
 		ifstream dbFile("../db/database.txt");
@@ -95,112 +74,61 @@ void CDatabaseHandler::deleteUser(string login, string password)
 		}
 		
 		
-	}
-	else
-	{
-		//TODO: error handling
-	}
 }
 bool CDatabaseHandler::authenticate(string log, string password)
 {
-//	bool return_value;
-
-	ifstream dbFile("../db/database.txt");
+//	bool return_value=false;
+	ifstream dbFile("database.txt");
 	string line, login, pass, onl, ip;
-	if(dbFile)
+	istringstream ss;
+	cout<<dbFile.is_open()<<endl;
+	if(dbFile.is_open())
 	{
+		cout<<"0"<<endl;
 		while((getline(dbFile, line)))
 		{
-			istringstream ss(line);
+			cout<<"0.5"<<endl;
+			ss.str(line);
 
 			ss >> login >> pass >> onl >> ip;
 
+			cout<<login<<"  "<<pass<<endl;
+
 			if(login==log && pass==password)
 			{
-	//			return_value=true;
-	//			return return_value;			i
+				cout<<"1";
+			//	return_value= true;
 				return true;
+				break;
 			}
 		
 		}
-	//	return_value=false;
 		return false;
 	}
-	//	return return_value;
-	
+//	return false;
 }
 bool CDatabaseHandler::findUser(string ln)
 {
 	bool return_value=false;
 	ifstream dbFile("../db/database.txt");
 	string line, login, pass, onl, ip;
-	if(dbFile)
+	istringstream ss;
+	if(dbFile.is_open())
 	{
-		while((getline(dbFile, line)))
+		while(getline(dbFile, line))
 		{
-		istringstream ss(line);
+			ss.str(line);
 
-		ss >> login >> pass >> onl >> ip;
+			ss>>login>>pass>>onl>>ip;		
 
-		if(login==ln)
-		{
-			return_value=true;			
-		}
-		
-
-
-		}
-		return return_value;
+			if(login==ln)
+			{
+				return_value=true;
+				break;
+			}
+		}	
 	}
 	return return_value;
-}
-bool CDatabaseHandler::isOnline(string log)
-{
-	bool return_value=false;
 
-	ifstream dbFile("../db/database.txt");
-	string line, login, pass, onl, ip;
-	if(dbFile)
-	{
-		while((getline(dbFile, line)))
-		{
-			istringstream ss(line);
-
-			ss >> login >> pass >> onl >> ip;
-
-			if(login == log && onl=="yes")
-				{
-					return_value=true;			
-				}
-		
-		}
-		return return_value;
-	}
-	return return_value;
 }
 
-void CDatabaseHandler::run()
-{
-	switch(m_flag)
-	{
-		case 1:
-			createUser(m_userLogin, m_userPassword);
-			break;
-
-		case 2:
-			deleteUser(m_userLogin, m_userPassword);
-			break;
-
-		case 3:
-			authenticate(m_userLogin, m_userPassword);
-			break;
-
-		case 4:
-			findUser(m_userLogin);
-			break;
-
-		case 5:
-			isOnline(m_userLogin);
-			break;	
-	}
-}

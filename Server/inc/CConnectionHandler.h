@@ -6,19 +6,20 @@
 
 class CConnectionHandler: public IConnectionHandler, public ITask
 {
-	private:
-		int m_flag;
-		int m_socketfd;
-		int m_clisocket;
-		CThPool *m_tp;
-		struct Frame m_clientFrame;
-	public:	
-		CConnectionHandler(int, CThPool*, int);
-		CConnectionHandler(int, CThPool*);
-		CConnectionHandler(int, CThPool*, int, Frame);
-		CConnectionHandler(){};
-		~CConnectionHandler();
-		void listening();
-		void run();
-		void clientHandler();
+    private:
+        int m_flag;
+        int m_socketfd;
+        int m_clisocket;
+        CThPool *m_tp;
+        SFrame m_clientFrame;
+        
+    public: 
+        CConnectionHandler(int, CThPool*, int);
+        CConnectionHandler(int, CThPool*);
+        CConnectionHandler(int, CThPool*, int, SFrame);
+        CConnectionHandler(){};
+        virtual ~CConnectionHandler();
+        void listening();
+        void run();
+        void clientHandler();
 };

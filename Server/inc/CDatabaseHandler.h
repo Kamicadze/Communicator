@@ -6,16 +6,16 @@
 
 class CDatabaseHandler: public IDatabaseHandler
 {
-	private:
-		pthread_mutex_t dbmtx;
-		pthread_cond_t dbcond;
+    private:
+        pthread_mutex_t m_dbmtx;
+        pthread_cond_t m_dbcond;
 
-	public:
-		CDatabaseHandler();
-		~CDatabaseHandler();
-		void createUser(std::string, std::string);
-		void deleteUser(std::string, std::string);
-		bool authenticate(std::string, std::string);
-		bool findUser(std::string);
+    public:
+        CDatabaseHandler();
+        ~CDatabaseHandler();
+        bool createUser(std::string, std::string);
+        bool deleteUser(std::string, std::string);
+        bool authenticate(std::string, std::string);
+        bool findUser(std::string);
 };
 

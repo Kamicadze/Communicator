@@ -16,9 +16,9 @@ int main(int argc, char *argv[])
 
 	bzero((char*)&cliFrame, sizeof(cliFrame));
 
-	sprintf(cliFrame.m_CID, "login");
-	cliFrame.m_dataType=1;
-	sprintf(cliFrame.m_messageData, "kami  123456");
+	sprintf(cliFrame.m_CID, "kami");
+	cliFrame.m_dataType=7;
+	sprintf(cliFrame.m_messageData, "kami 123456");
 
 	char buffer[256];
 
@@ -73,8 +73,20 @@ int main(int argc, char *argv[])
 
 	std::cout<<cliFrame.m_messageData<<std::endl;
 
+	cliFrame.m_dataType=7;
+	sprintf(cliFrame.m_messageData, "tamii 123456");
 
+	if((n=write(sockfd, &cliFrame, sizeof(cliFrame)))!=sizeof(cliFrame));
+	
+	if(n<0)
+	{
+		perror("ERROR writing to socket");
+		exit(1);
+	}
 
+	read(sockfd, &cliFrame, sizeof(cliFrame) );
+
+	std::cout<<cliFrame.m_messageData<<std::endl;
 
 	return 0;
 }

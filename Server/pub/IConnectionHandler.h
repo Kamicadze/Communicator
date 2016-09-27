@@ -2,8 +2,8 @@
 
 class IConnectionHandler
 {
-	public:
-		virtual ~IConnectionHandler(){}
-		virtual void listening()=0;
-		virtual void clientHandler()=0;
+    public:
+        virtual ~IConnectionHandler(){}
+        virtual void listening()=0;
+        virtual void clientHandler()=0;
 };

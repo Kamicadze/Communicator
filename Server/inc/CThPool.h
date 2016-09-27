@@ -9,19 +9,19 @@
 class CThPool: public IThPool
 {
 private:
-	pthread_t *m_threads;
-	int m_numThreads;
-	CWorkQueue o_workQueue;
+    pthread_t *m_threads;
+    int m_numThreads;
+    CWorkQueue m_oWorkQueue;
 
 public:
-	CThPool(int);
-	~CThPool();
-	void addTask(ITask*);
-	void finish();
-	bool hasWork();
-	void waitForCompletion();
+    CThPool(int);
+    ~CThPool();
+    void addTask(ITask*);
+    void finish();
+    bool hasWork();
+    void waitForCompletion();
 
-	std::map<std::string, int> online;
-	std::map<std::string, int> broad;
-	std::map<std::string, int> chatRooms;
+    std::map<std::string, int> online;
+    std::map<std::string, int> broad;
+    std::map<std::string, int> chatRooms; // metody na mapy
 };

@@ -7,19 +7,19 @@
 
 class CMessageHandler
 {
-	private:
-	std::map<std::string, int> m_chatUsers;
-	std::string m_host;
+    private:
+    std::map<std::string, int> m_chatUsers;
+    std::string m_host;
 
-	public:
-	CMessageHandler();
-	CMessageHandler(std::string);
-	~CMessageHandler();
-	void createChatRoom(Frame, int, CThPool*);
-	void broadcast(CThPool*, int, std::string);
-	void sendToAll(CThPool*, Frame);
-	void chatRoomHandler(std::string, int, std::string, CThPool*);
-	void writeToChat(std::map<std::string, int>, Frame);
+    public:
+    CMessageHandler();
+    CMessageHandler(std::string);
+    ~CMessageHandler();
+    void createChatRoom(SFrame, int, CThPool*);
+    void broadcast(CThPool*, int, std::string);
+    void sendToAll(CThPool*, SFrame);
+    void chatRoomHandler(std::string, int, std::string, CThPool*);
+    void writeToChat(std::map<std::string, int>, SFrame);
 
 
 };

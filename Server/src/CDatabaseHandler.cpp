@@ -4,131 +4,160 @@
 #include <cstdio>
 #include <iostream>
 #include <string.h>
-using namespace std;
+#include <sys/stat.h>
 
 CDatabaseHandler::CDatabaseHandler()
 {
-	pthread_mutex_init(&dbmtx, 0);
-	pthread_cond_init(&dbcond, 0);
+    pthread_mutex_init(&m_dbmtx, 0);
+    pthread_cond_init(&m_dbcond, 0);
 }
 
 CDatabaseHandler::~CDatabaseHandler()
 {
-	pthread_mutex_destroy(&dbmtx);
-	pthread_cond_destroy(&dbcond);
+    pthread_mutex_destroy(&m_dbmtx);
+    pthread_cond_destroy(&m_dbcond);
 }
-void CDatabaseHandler::createUser(string login, string password)
+bool CDatabaseHandler::createUser(std::string login, std::string password)
 {
-	if(true==findUser(login))
-	{
-		cout<<"login already taken"<<endl;
-		//TODO: error handling
-	}
-	else
-	{
-		//temporary ip, soon will be getting ip from frame
-		string tmpip="100.100.100.100";
-		pthread_mutex_lock(&dbmtx);
-		ofstream fh;
-		fh.open("../db/database.txt", ios::app);
-		if(fh.is_open())
-		{
-			fh<<login<<"  "<<password<<"  no  "<<tmpip<<endl;
-		
-//			fh.write(static_cast<char>(login), 20);
+    bool returnValue=false;
 
-			fh.close();
-			pthread_mutex_unlock(&dbmtx);
-		}
-		else
-		{
-		//TODO: error handling
-		}
-	}
+    if(true==findUser(login))
+    {
+        std::cout<<"login already taken"<<std::endl;
+        //TODO: error handling
+    }
+    else
+    {
+        //temporary ip, soon will be getting ip from frame
+        std::string tmpip="100.100.100.100";
+        pthread_mutex_lock(&m_dbmtx);
+        std::ofstream fh;
+        fh.open("../db/database.txt", std::ios::app);
+        if(fh.fail())
+        {
+            std::cerr<<"Error: "<<strerror(errno)<<std::endl;     }
+        else
+        {
+        //TODO: error handling
 
+            fh<<login<<"  "<<password<<"  no  "<<tmpip<<std::endl;
+        
+            fh.close();
+            pthread_mutex_unlock(&m_dbmtx);
+            returnValue=true;
+        }
+    }
+    return returnValue;
 }
-void CDatabaseHandler::deleteUser(string login, string password)
+bool CDatabaseHandler::deleteUser(std::string login, std::string password)
 {
-		string line, log, pass, onl, ip;
-		pthread_mutex_lock(&dbmtx);
-		ifstream dbFile("../db/database.txt");
-		ofstream fh;
-		fh.open("../db/tmp.txt", ios::app);
-		if(fh.is_open())
-		{
-			while(dbFile >> log >> pass >> onl >> ip)
-			{
-				if(log==login)
-				{
-					//skip
-				}
-				else
-				{
-					fh << log <<"  "<<pass<<"  "<<onl<<"  "<<ip<<endl;
-				}
-			}
-			fh.close();
-			remove("../db/database.txt");
-			rename("../db/tmp.txt", "../db/database.txt");
-			pthread_mutex_unlock(&dbmtx);
-		}
-		
-		
+        bool returnValue=false;
+
+        std::string line, log, pass, onl, ip;
+        pthread_mutex_lock(&m_dbmtx);
+        std::ifstream dbFile("../db/database.txt");
+        std::ofstream fh;
+        fh.open("../db/tmp.txt", std::ios::app);
+        if(fh.is_open() && dbFile.is_open())
+        {
+            while(dbFile >> log >> pass >> onl >> ip)
+            {
+                if(log==login)
+                {
+                    //skip
+                }
+                else
+                {
+                    fh << log <<"  "<<pass<<"  "<<onl<<"  "<<ip<<std::endl;
+                }
+            }
+            fh.close();
+            dbFile.close();
+            remove("../db/database.txt");
+            rename("../db/tmp.txt", "../db/database.txt");
+            pthread_mutex_unlock(&m_dbmtx);
+            returnValue=true;
+        }
+        else
+        {
+            std::cerr<<"Error: "<<strerror(errno)<<std::endl; 
+        
+        }
+
+        return returnValue;
+        
+        
 }
-bool CDatabaseHandler::authenticate(string log, string password)
+bool CDatabaseHandler::authenticate(std::string log, std::string password)
 {
-//	bool return_value=false;
-	ifstream dbFile("database.txt");
-	string line, login, pass, onl, ip;
-	istringstream ss;
-	cout<<dbFile.is_open()<<endl;
-	if(dbFile.is_open())
-	{
-		cout<<"0"<<endl;
-		while((getline(dbFile, line)))
-		{
-			cout<<"0.5"<<endl;
-			ss.str(line);
+    bool returnValue=false;
+    std::ifstream dbFile("../db/database.txt");
+    std::string line, login, pass, onl, ip;
+    std::istringstream ss;
+    if(!dbFile.fail())
+    {
+        while((std::getline(dbFile, line)))
+        {
+            ss.str(line);
 
-			ss >> login >> pass >> onl >> ip;
 
-			cout<<login<<"  "<<pass<<endl;
+            ss >> login >> pass >> onl >> ip;
+            std::cout<<login<<std::endl;
 
-			if(login==log && pass==password)
-			{
-				cout<<"1";
-			//	return_value= true;
-				return true;
-				break;
-			}
-		
-		}
-		return false;
-	}
-//	return false;
+            
+            if(0==login.compare(log) && 0==pass.compare(password))
+            {
+                returnValue= true;
+                break;
+            }
+            else
+            {
+                ss.str(std::string());
+                login=std::string();
+
+            
+            }
+        
+        }
+        
+    }
+    else
+    {
+        std::cerr<<"Error: "<<strerror(errno)<<std::endl; 
+    }
+    dbFile.close();
+    return returnValue;
 }
-bool CDatabaseHandler::findUser(string ln)
+bool CDatabaseHandler::findUser(std::string ln)
 {
-	bool return_value=false;
-	ifstream dbFile("../db/database.txt");
-	string line, login, pass, onl, ip;
-	istringstream ss;
-	if(dbFile.is_open())
-	{
-		while(getline(dbFile, line))
-		{
-			ss.str(line);
+    bool return_value=false;
+    std::ifstream dbFile("../db/database.txt");
+    std::string line, login, pass, onl, ip;
+    std::istringstream ss;
+    if(!dbFile.fail())
+    {
+        while(getline(dbFile, line))
+        {
+            ss.str(line);
 
-			ss>>login>>pass>>onl>>ip;		
+            ss>>login>>pass>>onl>>ip;       
 
-			if(login==ln)
-			{
-				return_value=true;
-				break;
-			}
-		}	
-	}
-	return return_value;
+            ss.str(std::string());
+
+            if(login==ln)
+            {
+                return_value=true;
+                break;
+            }
+        }   
+    }
+    else 
+    {
+        std::cerr<<"error file was not opened"<<std::endl;
+    }
+
+    dbFile.close();
+    return return_value;
 
 }
 

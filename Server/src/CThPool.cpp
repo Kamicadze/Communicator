@@ -8,52 +8,53 @@
 using namespace std;
 
 CThPool::CThPool(int n)
-	:m_numThreads(n){
-//		online["server"]=5001;
-		m_threads = new pthread_t[n];
-		for(int i=0;i<n;++i)
-		{
-			///creating new thread with function getWork which than
-			///send it to waiting for a real task
-			pthread_create(&(m_threads[i]),0, getWork, &o_workQueue);
-		}
-	}
+    :m_threads(0),
+    m_numThreads(n){
+//      online["server"]=5001;
+        m_threads = new pthread_t[n];
+        for(int i=0;i<n;++i)
+        {
+            ///creating new thread with function getWork which than
+            ///send it to waiting for a real task
+            pthread_create(&(m_threads[i]),0, getWork, &m_oWorkQueue);
+        }
+    }
 
 CThPool::~CThPool()
 {
-	o_workQueue.finished();
-	waitForCompletion();
-	for(int i=0;i<m_numThreads;++i)
-	{
-		pthread_join(m_threads[i], 0);
-	}
-	delete[] m_threads;
-	
+    m_oWorkQueue.finished();
+    waitForCompletion();
+    for(int i=0;i<m_numThreads;++i)
+    {
+        pthread_join(m_threads[i], 0);
+    }
+    delete[] m_threads;
+    
 }
 
 void CThPool::addTask(ITask *nt)
 {
-	o_workQueue.addTask(nt);
+    m_oWorkQueue.addTask(nt);
 }
 
 void CThPool::finish()
 {
-	o_workQueue.finished();
+    m_oWorkQueue.finished();
 }
 
 bool CThPool::hasWork()
 {
-	return o_workQueue.hasWork();
+    return m_oWorkQueue.hasWork();
 }
 
 void CThPool::waitForCompletion()
 {
-	
-	while(true)
-	{
-		if(false==o_workQueue.hasWork())
-		{
-			break;
-		}
-	}
+    
+    while(true)
+    {
+        if(false==m_oWorkQueue.hasWork())
+        {
+            break;
+        }
+    }
 }

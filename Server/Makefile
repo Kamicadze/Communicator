@@ -1,5 +1,6 @@
 CFLAGS= -std=c++11 -Wall -g  -isystem ../Common \
-	-isystem inc -isystem pub -isystem tests/inc
+	-isystem inc -isystem pub -isystem tests/inc \
+	-Wpedantic
 LDFLAGS= -pthread 
 LIBS= ../Common/libgtest.a ../Common/libgmock.a
 SOURCES= src/main.cpp src/CWorkQueue.cpp src/CThPool.cpp \

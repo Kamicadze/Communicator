@@ -3,27 +3,57 @@
 #include "CDatabaseHandler.h"
 #include <iostream>
 #include <cstdio>
-
+#include <cstdint>
 #include "Globals.h"
 #include "CConnectionHandler.h"
+#include <signal.h>
 
-//#include <gtest/gtest.h>
-using namespace std;
+static uint16_t loop;
+
+void breakit(int signum);
 
 
 int main()
 {
-	string login="kami";
-	string password="123456";
-	CThPool *tp= new CThPool(10);
-	tp->addTask(new CConnectionHandler(2, tp));
-	while(1)
-	{
-		//TODO: infinite loop which will break after getting kill sig	
-	}
+    struct sigaction sa; ///struct in here is a must have, otherwise sigaction
+                         ///treated as a method
+    sa.sa_handler=breakit;
+    sigemptyset(&sa.sa_mask);
+    loop =1;
+    static const int thNumber=10;
+    CThPool *tp= new CThPool(thNumber);
+    if(tp)
+    {
+        CConnectionHandler *ch=new CConnectionHandler(2, tp);
+        if(ch)
+        {
+            tp->addTask(ch);
+        }
+        else
+        {
+            std::cerr<<"Error: Memory not allocated"<<std::endl;
+        }
+    }
+    else
+    {
+        std::cerr<<"Error: Memory not allocated"<<std::endl;
+    }
 
-	tp->finish();
-	delete tp;
-	return 0;
+    while(1)
+    {
+		//TODO: infinite loop which will break after getting kill sig	
+     //   sigaction(SIGINT, &sa, NULL);        
+           
+        
+    }
+    tp->finish();
+    delete tp;
+    return 0;
+}
+void breakit(int signum)
+{
+   std::cout<<"Server stoping"<<std::endl;
+    loop=0;
+
 }
 

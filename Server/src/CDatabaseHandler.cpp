@@ -96,15 +96,8 @@ bool CDatabaseHandler::authenticate(std::string log, std::string password)
     std::istringstream ss;
     if(!dbFile.fail())
     {
-        while((std::getline(dbFile, line)))
+        while(dbFile >> login >> pass >> onl >> ip)
         {
-            ss.str(line);
-
-
-            ss >> login >> pass >> onl >> ip;
-            std::cout<<login<<std::endl;
-
-            
             if(0==login.compare(log) && 0==pass.compare(password))
             {
                 returnValue= true;

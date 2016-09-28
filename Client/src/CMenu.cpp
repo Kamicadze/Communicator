@@ -24,16 +24,113 @@ int CMenu::menuLoop()
     {
         return 0;
     }
-    
+
 
     return 0;
 }
 
-void CMenu::mainMenu()
+int CMenu::publicMenu(std::string login)
+{
+    std::string buffer;
+    SFrame frame;
+    CConnectionHandler ch;
+    std::string tmp;
+    int whileFlag=1;
+
+
+    std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"0. EXIT"<<std::endl;
+    std::cout<<"Communication has been started"<<std::endl<<std::endl;
+    std::cout<<"You can type in your message with maximum of 149 characters"<<std::endl;
+
+    while(whileFlag)
+    {
+        std::cin>>buffer;
+        if(149<buffer.length())
+        {
+            if(298<buffer.length())
+            {
+                std::cerr<<"Error: Message to long. Sending has been abort"<<std::endl;
+            }
+            else
+            {
+
+                tmp.clear();
+                for(int i=0; i<149;i++)
+                {
+                    tmp[i]=buffer[i];
+                }
+                frame=ch.frameCreator(3, tmp, login, sockfd);
+                if(0>(write(sockfd, &frame, sizeof(frame))))
+                {
+                    std::cerr<<"Error: cannot write to socket"<<std::endl;
+                    std::cout<<"Press ENTER to continue"<<std::endl;
+                    getchar();
+                    return 1;
+
+                }
+                tmp.clear();
+                for(uint16_t i=149; i<298; i++)
+                {
+                    if(i>buffer.length())
+                    {
+                        tmp[i-149]=buffer[i];
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                }
+                frame=ch.frameCreator(3, tmp, login, sockfd);
+                if(0>(write(sockfd, &frame, sizeof(frame))))
+                {
+                    std::cerr<<"Error: cannot write to socket"<<std::endl;
+                    std::cout<<"Press ENTER to continue"<<std::endl;
+                    getchar();
+                    return 1;
+
+                }
+            }
+        }
+        else if(3>buffer.length() && (buffer.find("0") != std::string::npos))
+        {
+            whileFlag=0;
+            frame=ch.frameCreator(5, buffer, login, sockfd);
+            if(0>(write(sockfd, &frame, sizeof(frame))))
+            {
+                std::cerr<<"Error: cannot write to socket"<<std::endl;
+                std::cout<<"Press ENTER to continue"<<std::endl;
+                getchar();
+                return 1;
+
+            }
+
+        }
+        else
+        {
+            frame=ch.frameCreator(3, buffer, login, sockfd);
+            if(0>(write(sockfd, &frame, sizeof(frame))))
+            {
+                std::cerr<<"Error: cannot write to socket"<<std::endl;
+                std::cout<<"Press ENTER to continue"<<std::endl;
+                getchar();
+                return 1;
+
+            }
+
+        }
+    }
+    return 0;
+}
+
+int CMenu::mainMenu(std::string login)
 {
     uint16_t optionFlag=0;
     uint16_t retFlag=1;
-
+    SFrame frame;
+    CConnectionHandler ch;
+    std::string buff;
 
     while(retFlag!=0)
     {
@@ -54,7 +151,19 @@ void CMenu::mainMenu()
             switch(optionFlag)
             {
                 case 1:
-                    //TODO: join public option
+                    //TODO: join public option, send a frame with only login and data type before accesing public menu
+
+                    frame=ch.frameCreator(3, buff, login, sockfd);
+                    if(0>(write(sockfd, &frame, sizeof(frame))))
+                    {
+                        std::cerr<<"Error: cannot write to socket"<<std::endl;
+                        std::cout<<"Press ENTER to continue"<<std::endl;
+                        getchar();
+                        return 1;
+
+                    }
+                    publicMenu(login);
+
                     break;
 
                 case 2:
@@ -74,7 +183,7 @@ void CMenu::mainMenu()
 
                 case 0:
                     //TODO: exit
-                   // return 0;
+                    return 0;
                     break;
 
                 default:
@@ -83,7 +192,7 @@ void CMenu::mainMenu()
         }
     }
 
-
+    return 0;
 }
 
 int CMenu::registerForm()
@@ -254,14 +363,18 @@ int CMenu::loggingMenu()
     }
     if(flag==1)
     {
+        flag=0;
+        flagChanged=false;
         std::cout<<"Press ENTER to continue"<<std::endl;
         std::cin.ignore();
         getchar();
-        mainMenu();
+        mainMenu(login);
         return 0;
     } 
     else
     {
+        flag=0;
+        flagChanged=false;
         std::cout<<"Press ENTER to continue"<<std::endl;
         std::cin.ignore();
         getchar();

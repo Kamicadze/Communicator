@@ -9,7 +9,7 @@ class CMenu: public IMenu
     public:
         CMenu();
         ~CMenu();
-        void mainMenu();
+        int mainMenu(std::string);
         int registerForm();
         int loggingMenu();
         void deletingMenu(){};
@@ -18,6 +18,7 @@ class CMenu: public IMenu
         int startingMenu();
         void setSock(int);
         int menuLoop();
+        int publicMenu(std::string);
 };
 
 

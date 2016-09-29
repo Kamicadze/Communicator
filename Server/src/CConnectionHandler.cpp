@@ -201,7 +201,8 @@ void CConnectionHandler::clientHandler()
                 break;
 
             case 2:
-
+                login.clear();
+                password.clear();
                 ss >> login >> password;
 
     
@@ -365,6 +366,7 @@ void CConnectionHandler::clientHandler()
             }
         
         memset(&m_clientFrame ,0 ,sizeof(m_clientFrame) );
+        ss.str(std::string());
         recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL);
     }
 }

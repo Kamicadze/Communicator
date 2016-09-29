@@ -138,13 +138,22 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
             o_frame.m_dataType=11;
             strcpy(o_frame.m_CID, login.c_str());
             write(port, &o_frame, sizeof(o_frame));
+            for(auto it=chat.begin(); it!=chat.end(); ++it)
+            {
+                if(it->first!=login)
+                {
+                    o_frame.m_destenationPort=it->second;
+                    //TODO: add a possibility to add write to task queue
+                    write(it->second, &o_frame, sizeof(o_frame));
+
+                }
+
+            }
+
 
             break;
         }
-        else if(7==dt)
-        {
-            chat.erase(o_frame.m_CID);
-        }
+
         else if(9==dt)
         {
             nLogin=reinterpret_cast<char*>(o_frame.m_messageData);
@@ -154,7 +163,7 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
             for(auto it=chat.begin(); it!=chat.end(); it++)
             {
                 if(it->first!=login || it->first!=host)
-                write(it->second, &o_frame, sizeof(o_frame));
+                    write(it->second, &o_frame, sizeof(o_frame));
             }
             chat[nLogin]=nPort;
 
@@ -189,6 +198,10 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
 
 
         }
+        else if(11==dt)
+        {
+            chat.erase(o_frame.m_CID);
+        }
         memset(&o_frame, 0, sizeof(o_frame));
     }
 
@@ -201,7 +214,7 @@ void CMessageHandler::writeToChat(std::map<std::string, int> chat, SFrame frame)
     {
         if(it->first!=frame.m_CID)
         {
-        
+
             chatFrame=frame;
             strcpy(chatFrame.m_DCID, it->first.c_str());
             chatFrame.m_dataType=4;
@@ -210,7 +223,7 @@ void CMessageHandler::writeToChat(std::map<std::string, int> chat, SFrame frame)
             write(it->second, &chatFrame, sizeof(chatFrame));
 
         }
-        
+
     }
 
 

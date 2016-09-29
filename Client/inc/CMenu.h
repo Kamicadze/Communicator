@@ -14,7 +14,7 @@ class CMenu: public IMenu
         int registerForm();
         int loggingMenu();
         int chatMenu(std::string);
-        void deletingMenu(std::string);
+        int deletingMenu(std::string);
         int invitationList(std::string);
         int createMenu(std::string);
         int startingMenu();

@@ -147,7 +147,6 @@ void CConnectionHandler::listening(int socketfd)
                 break;
 
             case 11:
-                frame.m_dataType=7;
                 write(socketfd, &frame, sizeof(frame));
                 break;
 

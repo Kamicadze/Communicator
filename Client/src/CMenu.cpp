@@ -248,8 +248,15 @@ int CMenu::mainMenu(std::string login)
                 case 9:
                     optionFlag=0;
                     //TODO:delete
-                    deletingMenu(login);
-                    //break;
+                    retFlag=deletingMenu(login);
+                    if(retFlag==1)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        retFlag=1;
+                    }
 
                 case 0:
                     //TODO: exit
@@ -372,7 +379,7 @@ void CMenu::setSock(int socketfd)
     CMenu::sockfd=socketfd;
 }
 
-void CMenu::deletingMenu(std::string login)
+int CMenu::deletingMenu(std::string login)
 {
     std::string password;
     std::string buffer;
@@ -386,8 +393,9 @@ void CMenu::deletingMenu(std::string login)
 
     std::cin>>password;
 
-    if(3>buffer.length() && (buffer.find("0") != std::string::npos))
+    if(3>password.length() && (password.find("0") != std::string::npos))
     {
+        return 1;
     }
     else
     {
@@ -423,13 +431,14 @@ void CMenu::deletingMenu(std::string login)
                 std::cout<<"Press ENTER to continue"<<std::endl;
                 std::cin.ignore();
                 getchar();
+                return 1;
             }
         }
 
     }
 
 
-
+    return 0;
 }
 int CMenu::chatMenu(std::string login)
 {

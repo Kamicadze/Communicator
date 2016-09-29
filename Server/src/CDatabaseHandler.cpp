@@ -98,7 +98,7 @@ bool CDatabaseHandler::authenticate(std::string log, std::string password)
     {
         while(dbFile >> login >> pass >> onl >> ip)
         {
-            if(0==login.compare(log) && 0==pass.compare(password))
+            if(true==(0==login.compare(log) && 0==pass.compare(password)))
             {
                 returnValue= true;
                 break;
@@ -126,10 +126,9 @@ bool CDatabaseHandler::findUser(std::string ln)
     bool return_value=false;
     std::ifstream dbFile("../db/database.txt");
     std::string line, login, pass, onl, ip;
-    std::istringstream ss;
     if(!dbFile.fail())
     {
-        while(ss>>login>>pass>>onl>>ip)
+        while(dbFile>>login>>pass>>onl>>ip)
         {       
 
             if(login==ln)

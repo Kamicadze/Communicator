@@ -9,6 +9,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <sstream>
 
 
 CConnectionHandler::CConnectionHandler()
@@ -21,6 +22,7 @@ int CConnectionHandler::handshake(int portNo, char* host)
 {
     int sockfd;
     sockaddr_in servAddr;
+
     hostent *server;
     SFrame cliFrame;
 
@@ -54,16 +56,6 @@ int CConnectionHandler::handshake(int portNo, char* host)
         return 1;
     }
 
-/*    if((n=write(sockfd, &cliFrame, sizeof(cliFrame)))!=sizeof(cliFrame));
-
-    if(n<0)
-    {
-        std::cerr<<"Error: cannot write to given socket"<<std::endl;
-        return 0;   
-    }
-
-    recv(sockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL);*/
-
     return sockfd;
 }
 
@@ -81,6 +73,8 @@ SFrame CConnectionHandler::frameCreator(int dataType, std::string messageData, s
 
 void CConnectionHandler::listening(int socketfd)
 {
+    char blue[]={0x1b, '[', '1', ';', '3', '4', 'm', 0 };
+    char normal[]={0x1b, '[', '0', ';', '3', '9', 'm', 0};
     SFrame frame;
     memset(&frame, 0, sizeof(frame));
     int dt=0;
@@ -92,7 +86,7 @@ void CConnectionHandler::listening(int socketfd)
 
         switch(dt)
         {
-            case 1:
+            case 1://logging
                 std::cout<<frame.m_messageData<<std::endl;
                 //TODO:answering to situation
                 flag=1;
@@ -100,28 +94,56 @@ void CConnectionHandler::listening(int socketfd)
                 
                 break;
 
-            case 2:
+            case 2://deleting
                 std::cout<<frame.m_messageData<<std::endl;
                 //TODO:: answer handler
                 sleep(1);
                 break;
 
-            case 3:
-                std::cout<<frame.m_messageData<<std::endl;
+            case 3://broadcast
+                std::cout<<blue<<frame.m_messageData<<normal<<std::endl;
                 break;
 
-            case 4:
+            case 4:// chat room
+                std::cout<<blue<<frame.m_messageData<<normal<<std::endl;
                 break;
 
-            case 5:
-                 break;       
+            case 5: //error/quiting
+                //TODO: Secure way of quiting
+                break;       
 
-            case 7:
+            case 6:
+                pendingInvites.push_back(frame.m_CID);
+
+                break;
+
+            case 7://create account
                 std::cout<<frame.m_messageData<<std::endl;
                 //TODO:answering to situation
                 flag=1;
                 flagChanged = true;
 
+                break;
+
+            case 8: //map of users
+                std::cout<<"użytkownicy online"<<std::endl;
+                std::cout<<frame.m_messageData<<std::endl;
+
+
+                break;
+
+            case 9:
+                write(socketfd, &frame, sizeof(frame));
+                
+                break;
+
+            case 10:
+                write(socketfd, &frame, sizeof(frame));
+                break;
+
+            case 11:
+                frame.m_dataType=7;
+                write(socketfd, &frame, sizeof(frame));
                 break;
 
             default:

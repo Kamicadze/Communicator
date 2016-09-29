@@ -45,7 +45,7 @@ int CMenu::publicMenu(std::string login)
 
     while(whileFlag)
     {
-        std::cin>>buffer;
+        std::getline(std::cin, buffer);
         if(149<buffer.length())
         {
             if(298<buffer.length())
@@ -124,6 +124,70 @@ int CMenu::publicMenu(std::string login)
     return 0;
 }
 
+int CMenu::createMenu(std::string login)
+{
+    SFrame frame;
+    CConnectionHandler ch;
+    std::string buff, invite;
+    int tmp=0;
+
+    std::cout<<"\033[2J\033[1;1H";
+
+    frame=ch.frameCreator(8, buff, login, sockfd);
+    if(0>(write(sockfd, &frame, sizeof(frame))))
+    {
+        std::cerr<<"Error: cannot write to socket"<<std::endl;
+        std::cout<<"Press ENTER to continue"<<std::endl;
+        getchar();
+        return 1;
+
+    }
+
+    buff.clear();
+    invite.clear();
+
+    std::cout<<"Type in logins of users you want invite"<<std::endl;
+    std::cout<<"Maximum 10 invites at once can be send"<<std::endl;
+    std::cout<<"Press 0 if want to stop"<<std::endl;
+    while(1)
+    {
+        if(tmp==10)
+        {
+            std::cout<<"You have sent maximum number of invites"<<std::endl;
+            break;
+        }
+        else if(3>invite.length() && (invite.find("0") != std::string::npos))
+        {
+            break;
+        }
+        else
+        {
+            tmp++;
+            std::cin>>invite;
+            buff.append(invite);
+            buff.append("  ");
+        }
+    }
+
+    frame=ch.frameCreator(4, buff, login, sockfd);
+    if(0>(write(sockfd, &frame, sizeof(frame))))
+    {
+        std::cerr<<"Error: cannot write to socket"<<std::endl;
+        std::cout<<"Press ENTER to continue"<<std::endl;
+        getchar();
+        return 1;
+
+    }
+
+
+    chatMenu(login);
+
+
+
+    return 0;
+}
+
+
 int CMenu::mainMenu(std::string login)
 {
     uint16_t optionFlag=0;
@@ -152,7 +216,7 @@ int CMenu::mainMenu(std::string login)
             {
                 case 1:
                     //TODO: join public option, send a frame with only login and data type before accesing public menu
-
+                    buff=login;
                     frame=ch.frameCreator(3, buff, login, sockfd);
                     if(0>(write(sockfd, &frame, sizeof(frame))))
                     {
@@ -168,12 +232,12 @@ int CMenu::mainMenu(std::string login)
 
                 case 2:
                     //TODO: create chat room
-                    createMenu();
+                    createMenu(login);
                     break;
 
                 case 3:
                     //TODO: invite list
-                    invitationList();
+                    invitationList(login);
                     break;
 
                 case 9:
@@ -183,6 +247,17 @@ int CMenu::mainMenu(std::string login)
 
                 case 0:
                     //TODO: exit
+                    buff="EXIT";
+                    frame=ch.frameCreator(5, buff, login, sockfd);
+                    if(0>(write(sockfd, &frame, sizeof(frame))))
+                    {
+                        std::cerr<<"Error: cannot write to socket"<<std::endl;
+                        std::cout<<"Press ENTER to continue"<<std::endl;
+                        getchar();
+                        return 1;
+
+                    }
+
                     return 0;
                     break;
 
@@ -284,10 +359,152 @@ void CMenu::setSock(int socketfd)
     CMenu::sockfd=socketfd;
 }
 
+int CMenu::chatMenu(std::string login)
+{
+    std::string buffer;
+    SFrame frame;
+    CConnectionHandler ch;
+    std::string tmp;
+    int whileFlag=1;
+
+
+    std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"0. EXIT"<<std::endl;
+    std::cout<<"Communication has been started"<<std::endl<<std::endl;
+    std::cout<<"You can type in your message with maximum of 149 characters"<<std::endl;
+
+    while(whileFlag)
+    {
+        std::getline(std::cin, buffer);
+        if(149<buffer.length())
+        {
+            if(298<buffer.length())
+            {
+                std::cerr<<"Error: Message to long. Sending has been aborted"<<std::endl;
+            }
+            else
+            {
+
+                tmp.clear();
+                for(int i=0; i<149;i++)
+                {
+                    tmp[i]=buffer[i];
+                }
+                frame=ch.frameCreator(4, tmp, login, sockfd);
+                if(0>(write(sockfd, &frame, sizeof(frame))))
+                {
+                    std::cerr<<"Error: cannot write to socket"<<std::endl;
+                    std::cout<<"Press ENTER to continue"<<std::endl;
+                    getchar();
+                    return 1;
+
+                }
+                tmp.clear();
+                for(uint16_t i=149; i<298; i++)
+                {
+                    if(i>buffer.length())
+                    {
+                        tmp[i-149]=buffer[i];
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                }
+                frame=ch.frameCreator(4, tmp, login, sockfd);
+                if(0>(write(sockfd, &frame, sizeof(frame))))
+                {
+                    std::cerr<<"Error: cannot write to socket"<<std::endl;
+                    std::cout<<"Press ENTER to continue"<<std::endl;
+                    getchar();
+                    return 1;
+
+                }
+            }
+        }
+        else if(3>buffer.length() && (buffer.find("0") != std::string::npos))
+        {
+            whileFlag=0;
+            frame=ch.frameCreator(5, buffer, login, sockfd);
+            if(0>(write(sockfd, &frame, sizeof(frame))))
+            {
+                std::cerr<<"Error: cannot write to socket"<<std::endl;
+                std::cout<<"Press ENTER to continue"<<std::endl;
+                getchar();
+                return 1;
+
+            }
+
+        }
+        else
+        {
+            frame=ch.frameCreator(4, buffer, login, sockfd);
+            if(0>(write(sockfd, &frame, sizeof(frame))))
+            {
+                std::cerr<<"Error: cannot write to socket"<<std::endl;
+                std::cout<<"Press ENTER to continue"<<std::endl;
+                getchar();
+                return 1;
+
+            }
+
+        }
+    }
+    return 0;
+
+
+}
+int CMenu::invitationList(std::string login)
+{
+    std::string host;
+    SFrame frame;
+    CConnectionHandler ch;
+
+    host.clear();
+    std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"You have "<<pendingInvites.size()<<" pending invites"<<std::endl;
+    if(pendingInvites.size()==0)
+    {
+        //TODO:handler to quit and to inform of no invites
+        std::cin.ignore();
+        getchar();
+        return 0;
+    }
+    std::cout<<"Chose and type in login of the host"<<std::endl;
+    std::cout<<"OR press 0 to exit"<<std::endl;
+    for(auto it=pendingInvites.begin(); it!=pendingInvites.end(); it++)
+    {
+        std::cout<<*it<<std::endl;
+    }
+    std::cin>>host;
+    if(3>host.length() && (host.find("0") != std::string::npos))
+    {
+        return 0;
+    }
+
+    frame=ch.frameCreator(6, host, login, sockfd);
+    if(0>(write(sockfd, &frame, sizeof(frame))))
+    {
+        std::cerr<<"Error: cannot write to socket"<<std::endl;
+        std::cout<<"Press ENTER to continue"<<std::endl;
+        getchar();
+        return 0;
+    }
+
+    chatMenu(login);
+
+    return 0;
+}
+
 int CMenu::startingMenu()
 {
     int opFlag=0;
     int sucFlag=1;
+    SFrame frame;
+    CConnectionHandler ch;
+    std::string buff, login;
+
 
     while(sucFlag!=0)
     {
@@ -319,7 +536,15 @@ int CMenu::startingMenu()
                     break;
 
                 case 0:
-                    return 0;
+                    buff="EXIT";
+                    frame=ch.frameCreator(5, buff, login, sockfd);
+                    if(0>(write(sockfd, &frame, sizeof(frame))))
+                    {
+                        std::cerr<<"Error: cannot write to socket"<<std::endl;
+                        std::cout<<"Press ENTER to continue"<<std::endl;
+                        getchar();
+                        return 0;
+                    }
                     break;
 
                 default:

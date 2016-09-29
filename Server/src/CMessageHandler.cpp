@@ -77,6 +77,7 @@ void CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock, CThPool *tp)
             invFrame.m_destenationPort=tp->online[login];
             sprintf(invFrame.m_messageData, "Invite");
             invFrame.m_dataType=6; ///6 is invite type for user and join chat for server
+            write(invFrame.m_destenationPort, &invFrame, sizeof(invFrame));
         }
         else
         {
@@ -96,6 +97,9 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
     SFrame o_frame;
     memset(&o_frame, 0, sizeof(o_frame));
     int dt=-1;
+    std::string nLogin, buff;
+    int nPort;
+    std::istringstream ss;
 
     std::map<std::string, int> chat;
     chat[login]=port;
@@ -104,7 +108,7 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
         SFrame newUserFrame;
         sprintf(newUserFrame.m_CID, "%s", login.c_str());
         sprintf(newUserFrame.m_DCID, "%s", host.c_str());
-        newUserFrame.m_dataType=7; ///data type 7 for acceptin an invite
+        newUserFrame.m_dataType=9; ///data type 9 for acceptin an invite
         newUserFrame.m_destenationPort=tp->chatRooms[host];
         sprintf(newUserFrame.m_messageData, "%s  %d ", login.c_str(), port);
         write(tp->chatRooms[host], &newUserFrame, sizeof(newUserFrame));
@@ -117,7 +121,7 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
         recv(port, &o_frame, sizeof(o_frame), MSG_WAITALL);
         dt=static_cast<int>(o_frame.m_dataType);
 
-        if(dt==2)
+        if(2==dt)
         {
             std::string inviteLogin;
             inviteLogin=o_frame.m_messageData;
@@ -134,17 +138,65 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
             write(invitePort, &inviteFrame, sizeof(inviteFrame));
             
         }
-        else if(dt==4)
+        else if(4==dt)
         {
             writeToChat(chat, o_frame);
         }
-        else if(dt==5)
+        else if(5==dt)//EXIT
         {
+            o_frame.m_dataType=11;
+            strcpy(o_frame.m_CID, login.c_str());
+            write(port, &o_frame, sizeof(o_frame));
+
             break;
         }
-        else if(dt==7)
+        else if(7==dt)
         {
-        
+            chat.erase(o_frame.m_CID);
+        }
+        else if(9==dt)
+        {
+            nLogin=reinterpret_cast<char*>(o_frame.m_messageData);
+            ss.str(nLogin);
+            nLogin.clear();
+            ss >> nLogin >> nPort;
+            for(auto it=chat.begin(); it!=chat.end(); it++)
+            {
+                if(it->first!=login || it->first!=host)
+                write(it->second, &o_frame, sizeof(o_frame));
+            }
+            chat[nLogin]=nPort;
+
+            if(login==host)
+            {
+                buff.clear();
+                for(auto it=chat.begin(); it!=chat.end(); it++)
+                {
+                    if(it->first!=nLogin)
+                    {
+                        buff.append(it->first);
+                        buff.append("  ");
+                        buff.append(std::to_string(it->second));//<-fix it
+                        buff.append("\n");
+                    }
+                }
+                strcpy(o_frame.m_messageData, buff.c_str());
+                o_frame.m_dataType=10;
+                write(nPort, &o_frame, sizeof(o_frame));
+            }
+        }
+        else if(10==dt)
+        {
+            buff.clear();
+            nLogin=reinterpret_cast<char*>(o_frame.m_messageData);
+            ss.str(nLogin);
+            nLogin.clear();
+            while(ss >> nLogin >> nPort)
+            {
+                chat[nLogin]=nPort;
+            }
+
+
         }
         memset(&o_frame, 0, sizeof(o_frame));
     }

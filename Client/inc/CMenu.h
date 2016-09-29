@@ -1,5 +1,6 @@
 #pragma once
 #include "IMenu.h"
+#include <map>
 
 class CMenu: public IMenu
 {
@@ -12,13 +13,15 @@ class CMenu: public IMenu
         int mainMenu(std::string);
         int registerForm();
         int loggingMenu();
+        int chatMenu(std::string);
         void deletingMenu(){};
-        void invitationList(){};
-        void createMenu(){};
+        int invitationList(std::string);
+        int createMenu(std::string);
         int startingMenu();
         void setSock(int);
         int menuLoop();
         int publicMenu(std::string);
+
 };
 
 

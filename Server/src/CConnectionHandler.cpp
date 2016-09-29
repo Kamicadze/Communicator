@@ -131,6 +131,7 @@ void CConnectionHandler::clientHandler()
 {
     string buff;
     istringstream ss;
+    string tmp;
     int dt=0;
     string login, password;
     CDatabaseHandler o_dbh;
@@ -259,6 +260,7 @@ void CConnectionHandler::clientHandler()
                 break;
     
             case 4:
+
                 o_mh.createChatRoom(m_clientFrame, m_clisocket, m_tp);
                 break;
     
@@ -269,6 +271,7 @@ void CConnectionHandler::clientHandler()
     
             case 6:
                 //TODO: joining chat room
+                o_mh.chatRoomHandler(m_clientFrame.m_CID, m_clisocket, m_clientFrame.m_messageData, m_tp);
                 break;
 
 
@@ -316,6 +319,27 @@ void CConnectionHandler::clientHandler()
                     write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
                 }
 
+                break;
+
+            case 8: //map sender
+                tmp.clear();
+                for(auto it=m_tp->online.begin(); it!=m_tp->online.end(); it++)
+                {
+                    if((tmp.length()+it->first.length()+2)>149)
+                    {
+                        m_clientFrame.m_dataType=8;
+                        sprintf(m_clientFrame.m_messageData, "%s", tmp.c_str());
+
+                        write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+                        tmp.clear();
+                    }
+                    tmp.append(it->first);
+                    tmp.append("  ");
+                }
+                m_clientFrame.m_dataType=8;
+                sprintf(m_clientFrame.m_messageData, "%s", tmp.c_str());
+
+                write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
                 break;
 
     

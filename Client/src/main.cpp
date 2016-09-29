@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     pthread_t *thread=new pthread_t;
     pthread_create(thread, 0, gListen, &socketfd);
 
-    cm.menuLoop();
+    cm.startingMenu();
     
 
 

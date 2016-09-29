@@ -151,22 +151,23 @@ int CMenu::createMenu(std::string login)
     std::cout<<"Press 0 if want to stop"<<std::endl;
     while(1)
     {
+        tmp++;
+
         if(tmp==10)
         {
             std::cout<<"You have sent maximum number of invites"<<std::endl;
             break;
         }
-        else if(3>invite.length() && (invite.find("0") != std::string::npos))
+
+        std::cin>>invite;
+
+        if(3>invite.length() && (invite.find("0") != std::string::npos))
         {
             break;
         }
-        else
-        {
-            tmp++;
-            std::cin>>invite;
-            buff.append(invite);
-            buff.append("  ");
-        }
+
+        buff.append(invite);
+        buff.append("  ");
     }
 
     frame=ch.frameCreator(4, buff, login, sockfd);
@@ -205,6 +206,7 @@ int CMenu::mainMenu(std::string login)
         std::cout<<"9. DELETE ACCOUNT"<<std::endl;
         std::cout<<"0. EXIT"<<std::endl;
 
+        optionFlag=0;
         std::cin>>optionFlag;
         if(10<=optionFlag ||( 4<=optionFlag && 8>=optionFlag))
         {
@@ -215,6 +217,7 @@ int CMenu::mainMenu(std::string login)
             switch(optionFlag)
             {
                 case 1:
+                     optionFlag=0;               
                     //TODO: join public option, send a frame with only login and data type before accesing public menu
                     buff=login;
                     frame=ch.frameCreator(3, buff, login, sockfd);
@@ -231,19 +234,22 @@ int CMenu::mainMenu(std::string login)
                     break;
 
                 case 2:
+                    optionFlag=0;
                     //TODO: create chat room
                     createMenu(login);
                     break;
 
                 case 3:
+                    optionFlag=0;
                     //TODO: invite list
                     invitationList(login);
                     break;
 
                 case 9:
+                    optionFlag=0;
                     //TODO:delete
-                    deletingMenu();
-                    break;
+                    deletingMenu(login);
+                    //break;
 
                 case 0:
                     //TODO: exit
@@ -257,6 +263,7 @@ int CMenu::mainMenu(std::string login)
                         return 1;
 
                     }
+
 
                     return 0;
                     break;
@@ -332,6 +339,9 @@ int CMenu::registerForm()
                 }
                 if(flag==7)
                 {
+                    flag=0;
+                    flagChanged=false;
+
                     std::cout<<"Press ENTER to continue"<<std::endl;
                     std::cin.ignore();
                     getchar();
@@ -339,6 +349,9 @@ int CMenu::registerForm()
                 }
                 else
                 {
+                    flag=0;
+                    flagChanged=false;
+
                     std::cout<<"Press ENTER to continue"<<std::endl;
                     std::cin.ignore();
                     getchar();
@@ -359,6 +372,65 @@ void CMenu::setSock(int socketfd)
     CMenu::sockfd=socketfd;
 }
 
+void CMenu::deletingMenu(std::string login)
+{
+    std::string password;
+    std::string buffer;
+    SFrame frame;
+    CConnectionHandler ch;
+
+
+    std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"Type in your password to confirm you want to delete your account"<<std::endl;
+    std::cout<<"OR typ 0 to EXIT"<<std::endl;
+
+    std::cin>>password;
+
+    if(3>buffer.length() && (buffer.find("0") != std::string::npos))
+    {
+    }
+    else
+    {
+        buffer=login;
+        buffer.append("  ");
+        buffer.append(password);
+        frame=ch.frameCreator(2, buffer, login, sockfd);
+        if(0>(write(sockfd, &frame, sizeof(frame))))
+        {
+            std::cerr<<"Error: cannot write to socket"<<std::endl;
+            std::cout<<"Press ENTER to continue"<<std::endl;
+            getchar();
+        }
+        else
+        {
+            while(false==flagChanged)
+            {
+                ///waiting for answer from the server
+            }
+            if(flag==2)
+            {
+                flag=0;
+                flagChanged=false;
+                std::cout<<"Press ENTER to continue"<<std::endl;
+                std::cin.ignore();
+                getchar();
+
+            } 
+            else
+            {
+                flag=0;
+                flagChanged=false;
+                std::cout<<"Press ENTER to continue"<<std::endl;
+                std::cin.ignore();
+                getchar();
+            }
+        }
+
+    }
+
+
+
+}
 int CMenu::chatMenu(std::string login)
 {
     std::string buffer;
@@ -492,6 +564,8 @@ int CMenu::invitationList(std::string login)
         return 0;
     }
 
+    pendingInvites.remove(host);
+
     chatMenu(login);
 
     return 0;
@@ -515,6 +589,7 @@ int CMenu::startingMenu()
         std::cout<<"0. Exit"<<std::endl;
         std::cout<<"Choose an option"<<std::endl;
 
+        opFlag=0;
         std::cin>>opFlag;
 
         getchar();
@@ -528,23 +603,28 @@ int CMenu::startingMenu()
             switch(opFlag)
             {
                 case 1:
+                    opFlag=0;
                     sucFlag=loggingMenu();
+                    
                     break;
 
                 case 2:
+                    opFlag=0;
                     sucFlag=registerForm();
                     break;
 
                 case 0:
                     buff="EXIT";
+                    login="0";
                     frame=ch.frameCreator(5, buff, login, sockfd);
                     if(0>(write(sockfd, &frame, sizeof(frame))))
                     {
                         std::cerr<<"Error: cannot write to socket"<<std::endl;
                         std::cout<<"Press ENTER to continue"<<std::endl;
                         getchar();
-                        return 0;
+                        return 1;
                     }
+                    return 0;
                     break;
 
                 default:
@@ -556,7 +636,7 @@ int CMenu::startingMenu()
 
         }
     }
-    return 1;
+    return 0;
 }
 
 int CMenu::loggingMenu()

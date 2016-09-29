@@ -88,16 +88,17 @@ void CConnectionHandler::listening(int socketfd)
         {
             case 1://logging
                 std::cout<<frame.m_messageData<<std::endl;
-                //TODO:answering to situation
+
                 flag=1;
                 flagChanged = true;
-                
+
                 break;
 
             case 2://deleting
                 std::cout<<frame.m_messageData<<std::endl;
-                //TODO:: answer handler
-                sleep(1);
+                flag=2;
+                flagChanged = true;
+
                 break;
 
             case 3://broadcast
@@ -110,6 +111,10 @@ void CConnectionHandler::listening(int socketfd)
 
             case 5: //error/quiting
                 //TODO: Secure way of quiting
+                std::cout<<frame.m_messageData<<std::endl;
+
+                flag=5;
+                flagChanged = true;
                 break;       
 
             case 6:
@@ -134,7 +139,7 @@ void CConnectionHandler::listening(int socketfd)
 
             case 9:
                 write(socketfd, &frame, sizeof(frame));
-                
+
                 break;
 
             case 10:
@@ -147,7 +152,7 @@ void CConnectionHandler::listening(int socketfd)
                 break;
 
             default:
-                 break;
+                break;
         }
 
     }

@@ -243,7 +243,7 @@ void CConnectionHandler::clientHandler()
                     m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
                     m_clientFrame.m_destenationPort=tmp8;
 
-                    m_clientFrame.m_dataType=2;
+                    m_clientFrame.m_dataType=5;
     
                     sprintf(m_clientFrame.m_messageData, "Wrong Login and/or password");
     

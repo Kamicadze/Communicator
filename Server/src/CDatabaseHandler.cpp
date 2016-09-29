@@ -129,13 +129,8 @@ bool CDatabaseHandler::findUser(std::string ln)
     std::istringstream ss;
     if(!dbFile.fail())
     {
-        while(getline(dbFile, line))
-        {
-            ss.str(line);
-
-            ss>>login>>pass>>onl>>ip;       
-
-            ss.str(std::string());
+        while(ss>>login>>pass>>onl>>ip)
+        {       
 
             if(login==ln)
             {

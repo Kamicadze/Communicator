@@ -67,23 +67,14 @@ void CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock, CThPool *tp)
     std::string login;
     SFrame invFrame;
 
-    while(1)
+    while(ss>>login)
     {
-        ss >> login;
-        if(login.length()>0)
-        {
             invFrame=cliFrame;
             strcpy(invFrame.m_DCID, login.c_str());
             invFrame.m_destenationPort=tp->online[login];
             sprintf(invFrame.m_messageData, "Invite");
             invFrame.m_dataType=6; ///6 is invite type for user and join chat for server
             write(invFrame.m_destenationPort, &invFrame, sizeof(invFrame));
-        }
-        else
-        {
-            break;
-        }
-
     }
 
     chatRoomHandler(cliFrame.m_CID, cliSock, cliFrame.m_CID, tp);

@@ -39,6 +39,8 @@ int CMenu::publicMenu(std::string login)
 
 
     std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"\t\t\t LOGGED AS "<<login<<std::endl<<std::endl;
+
     std::cout<<"0. EXIT"<<std::endl;
     std::cout<<"Communication has been started"<<std::endl<<std::endl;
     std::cout<<"You can type in your message with maximum of 149 characters"<<std::endl;
@@ -132,6 +134,8 @@ int CMenu::createMenu(std::string login)
     int tmp=0;
 
     std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"\t\t\t LOGGED AS "<<login<<std::endl<<std::endl;
+
 
     frame=ch.frameCreator(8, buff, login, sockfd);
     if(0>(write(sockfd, &frame, sizeof(frame))))
@@ -200,6 +204,8 @@ int CMenu::mainMenu(std::string login)
     while(retFlag!=0)
     {
         std::cout<<"\033[2J\033[1;1H";
+        std::cout<<"\t\t\t LOGGED AS "<<login<<std::endl<<std::endl;
+
         std::cout<<"1. JOIN PUBLIC CHAT"<<std::endl;
         std::cout<<"2. CREATE PRIVATE CHAT ROOM"<<std::endl;
         std::cout<<"3. INVITE LIST"<<std::endl;
@@ -208,6 +214,7 @@ int CMenu::mainMenu(std::string login)
 
         optionFlag=0;
         std::cin>>optionFlag;
+
         if(10<=optionFlag ||( 4<=optionFlag && 8>=optionFlag))
         {
             std::cout<<"Error: You chose wrong option"<<std::endl;
@@ -388,9 +395,11 @@ int CMenu::deletingMenu(std::string login)
 
 
     std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"\t\t\t LOGGED AS "<<login<<std::endl<<std::endl;
     std::cout<<"Type in your password to confirm you want to delete your account"<<std::endl;
     std::cout<<"OR typ 0 to EXIT"<<std::endl;
 
+//    password.clear();
     std::cin>>password;
 
     if(3>password.length() && (password.find("0") != std::string::npos))
@@ -450,6 +459,7 @@ int CMenu::chatMenu(std::string login)
 
 
     std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"\t\t\t LOGGED AS "<<login<<std::endl<<std::endl;
     std::cout<<"0. EXIT"<<std::endl;
     std::cout<<"Communication has been started"<<std::endl<<std::endl;
     std::cout<<"You can type in your message with maximum of 149 characters"<<std::endl;
@@ -541,9 +551,12 @@ int CMenu::invitationList(std::string login)
     std::string host;
     SFrame frame;
     CConnectionHandler ch;
+    int checkFlag=0;
 
     host.clear();
     std::cout<<"\033[2J\033[1;1H";
+    std::cout<<"\t\t\t LOGGED AS "<<login<<std::endl<<std::endl;
+
     std::cout<<"You have "<<pendingInvites.size()<<" pending invites"<<std::endl;
     if(pendingInvites.size()==0)
     {
@@ -563,26 +576,47 @@ int CMenu::invitationList(std::string login)
     {
         return 0;
     }
-
-    frame=ch.frameCreator(6, host, login, sockfd);
-    if(0>(write(sockfd, &frame, sizeof(frame))))
+    for(auto it=pendingInvites.begin(); it!=pendingInvites.end(); it++)
     {
-        std::cerr<<"Error: cannot write to socket"<<std::endl;
-        std::cout<<"Press ENTER to continue"<<std::endl;
-        getchar();
-        return 0;
+        if(host.compare(*it)==0)
+        {
+            checkFlag=1;
+            break;
+        }
     }
+    if(checkFlag==1)
+    {
 
-    pendingInvites.remove(host);
 
-    chatMenu(login);
 
+        frame=ch.frameCreator(6, host, login, sockfd);
+        if(0>(write(sockfd, &frame, sizeof(frame))))
+        {
+            std::cerr<<"Error: cannot write to socket"<<std::endl;
+            std::cout<<"Press ENTER to continue"<<std::endl;
+            getchar();
+            return 0;
+        }
+
+        pendingInvites.remove(host);
+
+        chatMenu(login);
+    }
+    else
+    {
+        std::cout<<"Wrong host name"<<std::endl;
+
+        std::cout<<"Press ENTER to continue"<<std::endl;
+        std::cin.ignore();
+        getchar();
+
+    }
     return 0;
 }
 
 int CMenu::startingMenu()
 {
-    int opFlag=0;
+
     int sucFlag=1;
     SFrame frame;
     CConnectionHandler ch;
@@ -591,6 +625,8 @@ int CMenu::startingMenu()
 
     while(sucFlag!=0)
     {
+        int opFlag=0;
+        //czyścić buffor
         std::cout<<"\033[2J\033[1;1H";
 
         std::cout<<"1. Login to your accout"<<std::endl;
@@ -598,7 +634,8 @@ int CMenu::startingMenu()
         std::cout<<"0. Exit"<<std::endl;
         std::cout<<"Choose an option"<<std::endl;
 
-        opFlag=0;
+        opFlag=1;
+        std::cin.sync();
         std::cin>>opFlag;
 
         getchar();
@@ -614,7 +651,7 @@ int CMenu::startingMenu()
                 case 1:
                     opFlag=0;
                     sucFlag=loggingMenu();
-                    
+
                     break;
 
                 case 2:
@@ -653,18 +690,27 @@ int CMenu::loggingMenu()
     std::cout<<"\033[2J\033[1;1H";
 
     std::string login, password, msg;
+    login.clear();
+    password.clear();
+    msg.clear();
+
 
     std::cout<<"Please type in your login"<<std::endl;
-    std::cin>>login;
+    std::getline(std::cin, login);
     std::cout<<"Please type in your password"<<std::endl<<std::endl;
-    std::cin>>password;
+
+    std::getline(std::cin, password);
     std::cout<<"Please wait. Authentication in progress"<<std::endl;
+
+    std::cout<<"log: "<<login;
+    std::cout<<"pass: "<<password;
 
     msg=login;
     msg.append("  ");
     msg.append(password);
     SFrame frame;
     CConnectionHandler ch;
+    std::cout<<"socket:: "<<sockfd<<std::endl;
     frame=ch.frameCreator(1, msg, login, sockfd);
     if(0>(write(sockfd, &frame, sizeof(frame))))
     {
@@ -680,7 +726,7 @@ int CMenu::loggingMenu()
         flag=0;
         flagChanged=false;
         std::cout<<"Press ENTER to continue"<<std::endl;
-        std::cin.ignore();
+
         getchar();
         mainMenu(login);
         return 0;
@@ -690,7 +736,6 @@ int CMenu::loggingMenu()
         flag=0;
         flagChanged=false;
         std::cout<<"Press ENTER to continue"<<std::endl;
-        std::cin.ignore();
         getchar();
         return 1;
     }

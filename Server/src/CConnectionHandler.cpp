@@ -1,6 +1,7 @@
 #include "CConnectionHandler.h"
 #include <unistd.h>
-//#include <sys/socked.h>
+#include <sys/socket.h>
+//#include <sys/select.h>
 #include <netdb.h>
 #include <iostream>
 #include <netinet/in.h>
@@ -8,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Globals.h"
+#include <sys/time.h>
+#include <sys/types.h>
 #include "SFrame.h"
 #include <sstream>
 #include "CMessageHandler.h"
@@ -65,8 +68,8 @@ void CConnectionHandler::listening()
     m_socketfd=socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in serv_addr, cli_addr;
     SFrame cliFrame;
-    
-    
+
+
 
     if(m_socketfd < 0)
     {
@@ -89,10 +92,13 @@ void CConnectionHandler::listening()
 
 
 
-    while(1)
+    while(false==endOfServerFlag)
     {
-
-        listen(m_socketfd, 5);
+        if(listen(m_socketfd, 5)==-1)
+        {
+            perror("listen");
+            exit(1);
+        }
         clilen = sizeof(cli_addr);
 
         newsockfd=accept(m_socketfd, reinterpret_cast<sockaddr *>(&cli_addr), (socklen_t*)&clilen);
@@ -101,48 +107,55 @@ void CConnectionHandler::listening()
             perror("ERROR on accept");
             exit(1);
         }
-    
-        n=recv(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL);
-        if(n<0)
+
+
+        if(false==endOfServerFlag)
         {
-            //TODO: error handling
-            std::cerr<<"Error: message not recived"<<std::endl;
+            
+            cout<<"odbieram"<<endl;
+            n=recv(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL);
+            if(n<0)
+            {
+                //TODO: error handling
+                std::cerr<<"Error: message not recived"<<std::endl;
+            }
+            cout<<"odebrałem"<<endl;
+
+            CConnectionHandler *ch=new CConnectionHandler(3, m_tp, newsockfd, cliFrame);
+
+            if(ch)
+            {
+                m_tp->addTask(ch);
+            }
         }
-
-
-        CConnectionHandler *ch=new CConnectionHandler(3, m_tp, newsockfd, cliFrame);
-
-        if(ch)
-        {
-            m_tp->addTask(ch);
-        }
-
         newsockfd=0;
 
         memset(&cliFrame ,0 ,sizeof(cliFrame));
 
-
     }
     close(newsockfd);
+    close(m_socketfd);
 
-        
+
 }
 void CConnectionHandler::clientHandler()
 {
     string buff;
-    istringstream ss;
+
     string tmp;
+    int controlFlag=0;
     int dt=0;
     string login, password;
     CDatabaseHandler o_dbh;
     CMessageHandler o_mh;
-    uint32_t tmp32;
-    uint8_t tmp8;
-    while(1)
+    while(false==endOfServerFlag)
     {
+        istringstream ss;
         buff=reinterpret_cast<char*>(m_clientFrame.m_messageData);
         ss.str(buff);   
         dt=static_cast<int>(m_clientFrame.m_dataType);
+
+        // std::cout<<"data: "<<ss<<std::endl;
 
 
 
@@ -150,51 +163,24 @@ void CConnectionHandler::clientHandler()
         {
 
             case 1:     ///handshake case
+                login.clear();
+                password.clear();
                 ss >> login >> password;
-    
-    
-                if(true==o_dbh.authenticate(login, password))
+
+
+                if((true==o_dbh.authenticate(login, password))&&(m_tp->online.find(login)==m_tp->online.end()))
                 {
                     m_tp->online[login]=m_clisocket;
-                
-                    ss.str(string());   
-                    ss.str(m_clientFrame.m_CID);    
-                    ss >> m_clientFrame.m_DCID;
-                    sprintf(m_clientFrame.m_CID, "Server");
-                    tmp32=m_clientFrame.m_sourceAddress;
-                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                    m_clientFrame.m_destenationAddress=tmp32;
-
-                    tmp8=m_clientFrame.m_sourcePort;
-                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                    m_clientFrame.m_destenationPort=tmp8;
-
-                    m_clientFrame.m_dataType=1;
-
-                    sprintf(m_clientFrame.m_messageData,"Succes");
-
-                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+                    tmp.clear();
+                    tmp="Success";
+                    writeAnswer(tmp, 1);
 
                 }
                 else
                 {
-                    ss.str(string());   
-                    ss.str(m_clientFrame.m_CID);    
-                    ss >> m_clientFrame.m_DCID;
-                    sprintf(m_clientFrame.m_CID, "Server");
-                    tmp32=m_clientFrame.m_sourceAddress;
-                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                    m_clientFrame.m_destenationAddress=tmp32;
-
-                    tmp8=m_clientFrame.m_sourcePort;
-                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                    m_clientFrame.m_destenationPort=tmp8;
-
-                    m_clientFrame.m_dataType=5;
-
-                    sprintf(m_clientFrame.m_messageData, "Wrong Login and/or password");
-
-                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+                    tmp.clear();
+                    tmp="Wrong Login and/or Password";
+                    writeAnswer(tmp, 5);
 
                 }
 
@@ -205,71 +191,43 @@ void CConnectionHandler::clientHandler()
                 password.clear();
                 ss >> login >> password;
 
-    
+
                 if(true==o_dbh.authenticate(login, password))
                 {
                     m_tp->online.erase(login);
                     o_dbh.deleteUser(login, password);
-                    
-                    ss.str(string());   
-                    ss.str(m_clientFrame.m_CID);    
-                    ss >> m_clientFrame.m_DCID;
-                    sprintf(m_clientFrame.m_CID, "Server");
-                    tmp32=m_clientFrame.m_sourceAddress;
-                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                    m_clientFrame.m_destenationAddress=tmp32;
-    
-                    tmp8=m_clientFrame.m_sourcePort;
-                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                    m_clientFrame.m_destenationPort=tmp8;
 
-                    m_clientFrame.m_dataType=2;
+                    tmp.clear();
+                    tmp="Success";
+                    writeAnswer(tmp, 2);
 
-                    sprintf(m_clientFrame.m_messageData,"Succes");
-    
-                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
-    
                 }
                 else
                 {
-                    ss.str(string());   
-                    ss.str(m_clientFrame.m_CID);    
-                    ss >> m_clientFrame.m_DCID;
-                    sprintf(m_clientFrame.m_CID, "Server");
-                    tmp32=m_clientFrame.m_sourceAddress;
-                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                    m_clientFrame.m_destenationAddress=tmp32;
-    
-                    tmp8=m_clientFrame.m_sourcePort;
-                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                    m_clientFrame.m_destenationPort=tmp8;
-
-                    m_clientFrame.m_dataType=5;
-    
-                    sprintf(m_clientFrame.m_messageData, "Wrong Login and/or password");
-    
-                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
-    
+                    tmp.clear();
+                    tmp="Wrong Login and/or password";
+                    writeAnswer(tmp, 5);
                 }
-    
+
                 break;
-    
+
             case 3:
-    
+
                 o_mh.broadcast(m_tp, m_clisocket, m_clientFrame.m_CID);
-    
+
                 break;
-    
+
             case 4:
 
                 o_mh.createChatRoom(m_clientFrame, m_clisocket, m_tp);
                 break;
-    
+
             case 5:     ///goodbye case
                 m_tp->online.erase(login);
-                close(m_clisocket);
+                cout<<"jestem tu"<<endl;
+                controlFlag=1;
                 break;
-    
+
             case 6:
                 //TODO: joining chat room
                 o_mh.chatRoomHandler(m_clientFrame.m_CID, m_clisocket, m_clientFrame.m_messageData, m_tp);
@@ -281,43 +239,17 @@ void CConnectionHandler::clientHandler()
 
                 if(true==o_dbh.createUser(login, password))
                 {
-                    ss.str(string());   
-                    ss.str(m_clientFrame.m_CID);    
-                    ss >> m_clientFrame.m_DCID;
-                    sprintf(m_clientFrame.m_CID, "Server");
-                    tmp32=m_clientFrame.m_sourceAddress;
-                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                    m_clientFrame.m_destenationAddress=tmp32;
-    
-                    tmp8=m_clientFrame.m_sourcePort;
-                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                    m_clientFrame.m_destenationPort=tmp8;
+                    tmp.clear();
+                    tmp="Succes";
+                    writeAnswer(tmp, 7);
 
-                    m_clientFrame.m_dataType=7;
-    
-                    sprintf(m_clientFrame.m_messageData,"Succes");
-    
-                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
                 }
                 else
                 {
-                    ss.str(string());   
-                    ss.str(m_clientFrame.m_CID);    
-                    ss >> m_clientFrame.m_DCID;
-                    sprintf(m_clientFrame.m_CID, "Server");
-                    tmp32=m_clientFrame.m_sourceAddress;
-                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                    m_clientFrame.m_destenationAddress=tmp32;
-    
-                    tmp8=m_clientFrame.m_sourcePort;
-                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                    m_clientFrame.m_destenationPort=tmp8;
-    
-                    m_clientFrame.m_dataType=5;
 
-                    sprintf(m_clientFrame.m_messageData, "Cannot add a user");
-    
-                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+                    tmp.clear();
+                    tmp="Cannot add a user";
+                    writeAnswer(tmp, 5);
                 }
 
                 break;
@@ -343,31 +275,85 @@ void CConnectionHandler::clientHandler()
                 write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
                 break;
 
-    
+            case 66:
+
+
             default:
-                    
-                ss.str(string());   
-                ss.str(m_clientFrame.m_CID);    
-                ss >> m_clientFrame.m_DCID;
-                sprintf(m_clientFrame.m_CID, "Server");
-                tmp32=m_clientFrame.m_sourceAddress;
-                m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                m_clientFrame.m_destenationAddress=tmp32;
-    
-                tmp8=m_clientFrame.m_sourcePort;
-                m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                m_clientFrame.m_destenationPort=tmp8;
-    
-                sprintf(m_clientFrame.m_messageData, "ERROR");
-    
-                write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+
+                /*  ss.str(string());   
+                    ss.str(m_clientFrame.m_CID);    
+                    ss >> m_clientFrame.m_DCID;
+                    sprintf(m_clientFrame.m_CID, "Server");
+                    tmp32=m_clientFrame.m_sourceAddress;
+                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
+                    m_clientFrame.m_destenationAddress=tmp32;
+
+                    tmp8=m_clientFrame.m_sourcePort;
+                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
+                    m_clientFrame.m_destenationPort=tmp8;
+
+                    sprintf(m_clientFrame.m_messageData, "ERROR");
+
+                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));*/
                 break;
 
-            }
-        
+        }
+        if(1==controlFlag)
+        {
+            break;
+        }
+        buff.clear();
         memset(&m_clientFrame ,0 ,sizeof(m_clientFrame) );
-        ss.str(std::string());
+        //        rv=select(m_clisocket, &readfds, NULL, NULL, &tv);
+        //        if(-1==rv)
+        //        {
+        //            std::cerr<<"Error: select"<<std::endl;
+        //        }
+        //        else if(0==rv)
+        //        {
+        //TODO: information to user about timeout
+        //            std::cout<<"User timeout"<<std::endl;
+        //           tmp.clear();
+        //           tmp="You were not active for too long!";
+        //            writeAnswer(tmp, 66);
+        //           break;
+        //        }
+        //        else
+        //        {
+        cout<<"odbieram"<<endl;
         recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL);
+        //        }
     }
+
+    tmp.clear();
+    tmp="Server Terminated!";
+    writeAnswer(tmp, 66);
+    std::cout<<"sent"<<std::endl;
+    close(m_clisocket);
+    std::cout<<"closed"<<std::endl;
+}
+void CConnectionHandler::writeAnswer(std::string msg, int dataType)
+{
+    uint32_t tmp32;
+    uint8_t tmp8;
+    istringstream ss;
+    ss.str(string());   
+    ss.str(m_clientFrame.m_CID);    
+    ss >> m_clientFrame.m_DCID;
+    sprintf(m_clientFrame.m_CID, "Server");
+    tmp32=m_clientFrame.m_sourceAddress;
+    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
+    m_clientFrame.m_destenationAddress=tmp32;
+
+    tmp8=m_clientFrame.m_sourcePort;
+    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
+    m_clientFrame.m_destenationPort=tmp8;
+
+    m_clientFrame.m_dataType=dataType;
+
+    strcpy(m_clientFrame.m_messageData, msg.c_str());
+
+    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+
 }
 

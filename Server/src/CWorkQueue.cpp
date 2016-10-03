@@ -38,10 +38,16 @@ ITask* CWorkQueue::nextTask()
         {
             pthread_cond_wait(&m_wcond, &m_qmtx);
         }
-        o_nt=tasks.front();
-        tasks.pop();
-
+        if(!tasks.empty())
+        {
+            o_nt=tasks.front();
+            tasks.pop();
         }
+        else
+        {
+            o_nt=0;
+        }
+    }
     ///unlock mutex
     pthread_mutex_unlock(&m_qmtx);
     return o_nt;
@@ -72,21 +78,12 @@ void CWorkQueue::finished()
 {
     pthread_mutex_lock(&m_qmtx);
     m_finished=true;
-    pthread_cond_signal(&m_wcond);
+    pthread_cond_broadcast(&m_wcond);
     pthread_mutex_unlock(&m_qmtx);
 }
 
 bool CWorkQueue::hasWork()
 {
-    bool return_value=false;
-    if(0==tasks.size())
-    {
-        return_value=false;
-    }
-    else
-    {
-        return_value=true;
-    }
-    return return_value;
+    return (tasks.size()>0);
 }
 

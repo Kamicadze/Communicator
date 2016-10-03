@@ -22,4 +22,5 @@ class CConnectionHandler: public IConnectionHandler, public ITask
         void listening();
         void run();
         void clientHandler();
+        void writeAnswer(std::string, int);
 };

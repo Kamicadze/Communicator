@@ -8,6 +8,7 @@
 
 //static pthread_mutex_t console_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+extern bool endOfServerFlag;
 
 static void *getWork(void* par)
 {

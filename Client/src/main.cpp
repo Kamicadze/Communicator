@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     
 
 
-   // pthread_join(thread);
+//    pthread_join(thread);
     delete thread;
     return 0;
 

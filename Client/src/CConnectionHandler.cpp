@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <fstream>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -68,6 +69,13 @@ SFrame CConnectionHandler::frameCreator(int dataType, std::string messageData, s
     strcpy(frame.m_messageData, messageData.c_str());
     frame.m_destenationPort=destPort;
 
+    std::ofstream fh;
+    fh.open("log", std::ios::app);
+    if(!fh.fail())
+    {
+        fh<<frame.m_CID<<"  "<<frame.m_DCID<<"  "<<frame.m_messageData<<"  "<<frame.m_dataType<<"  "<<frame.m_destenationPort;
+    }
+    fh.close();
     return frame;
 }
 
@@ -102,22 +110,24 @@ void CConnectionHandler::listening(int socketfd)
                 break;
 
             case 3://broadcast
-                std::cout<<blue<<frame.m_messageData<<normal<<std::endl;
+                std::cout<<blue<<frame.m_CID<<": "<<frame.m_messageData<<normal<<std::endl;
                 break;
 
             case 4:// chat room
-                std::cout<<blue<<frame.m_messageData<<normal<<std::endl;
+                std::cout<<blue<<frame.m_CID<<": "<<frame.m_messageData<<normal<<std::endl;
                 break;
 
             case 5: //error/quiting
                 //TODO: Secure way of quiting
                 std::cout<<frame.m_messageData<<std::endl;
 
+
                 flag=5;
                 flagChanged = true;
                 break;       
 
             case 6:
+                std::cout<<"You got an invite "<<std::endl;
                 pendingInvites.push_back(frame.m_CID);
 
                 break;
@@ -131,7 +141,6 @@ void CConnectionHandler::listening(int socketfd)
                 break;
 
             case 8: //map of users
-                std::cout<<"użytkownicy online"<<std::endl;
                 std::cout<<frame.m_messageData<<std::endl;
 
 
@@ -148,6 +157,11 @@ void CConnectionHandler::listening(int socketfd)
 
             case 11:
                 write(socketfd, &frame, sizeof(frame));
+                break;
+
+            case 66:
+                std::cout<<frame.m_messageData<<std::endl;
+
                 break;
 
             default:

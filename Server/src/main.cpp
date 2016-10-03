@@ -7,10 +7,16 @@
 #include "Globals.h"
 #include "CConnectionHandler.h"
 #include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
 
 static uint16_t loop;
 
 void breakit(int signum);
+void helpListenToFinish();
 
 
 int main()
@@ -19,7 +25,6 @@ int main()
                          ///treated as a method
     sa.sa_handler=breakit;
     sigemptyset(&sa.sa_mask);
-    loop =1;
     static const int thNumber=10;
     CThPool *tp= new CThPool(thNumber);
     if(tp)
@@ -39,21 +44,40 @@ int main()
         std::cerr<<"Error: Memory not allocated"<<std::endl;
     }
 
-    while(1)
+    while(false==endOfServerFlag)
     {
 		//TODO: infinite loop which will break after getting kill sig	
-     //   sigaction(SIGINT, &sa, NULL);        
+        sigaction(SIGINT, &sa, NULL);        
            
         
     }
     tp->finish();
+    helpListenToFinish();
     delete tp;
     return 0;
 }
 void breakit(int signum)
 {
-   std::cout<<"Server stoping"<<std::endl;
-    loop=0;
+    std::cout<<"Server stoping"<<std::endl;
+    endOfServerFlag=true;;
 
+}
+void helpListenToFinish()
+{
+    int sockfd=socket(AF_INET, SOCK_STREAM, 0);
+    hostent *server=gethostbyname("localhost");
+    sockaddr_in servAddr;
+
+    memset(&servAddr, 0, sizeof(servAddr));
+    servAddr.sin_family=AF_INET;
+
+    memcpy(server->h_addr, &servAddr.sin_addr.s_addr, server->h_length);
+    servAddr.sin_port=htons(5001);
+    if(connect(sockfd, reinterpret_cast<sockaddr*>(&servAddr), sizeof(servAddr))<0)
+    {
+        std::cerr<<"Emergancy shutdown failed. RUN AWAY!!!"<<std::endl;
+    }
+    std::cout<<"SUCCES!!"<<std::endl;
+    close(sockfd);
 }
 

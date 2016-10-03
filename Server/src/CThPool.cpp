@@ -50,11 +50,6 @@ bool CThPool::hasWork()
 void CThPool::waitForCompletion()
 {
     
-    while(true)
-    {
-        if(false==m_oWorkQueue.hasWork())
-        {
-            break;
-        }
-    }
+    while(m_oWorkQueue.hasWork())
+    {}
 }

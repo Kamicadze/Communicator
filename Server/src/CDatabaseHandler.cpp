@@ -110,9 +110,7 @@ bool CDatabaseHandler::authenticate(std::string log, std::string password)
             else
             {
 
-                std::cout<<"szukany: "<<log<<" znaleziony: "<<login<<std::endl;
                 login.clear();
-                std::cout<<"szukanyp: "<<password<<" znalezionyp: "<<pass<<std::endl;
 
                 pass.clear();
 

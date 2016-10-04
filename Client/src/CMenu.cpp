@@ -456,6 +456,7 @@ int CMenu::chatMenu(std::string login)
     CConnectionHandler ch;
     std::string tmp;
     int whileFlag=1;
+    flag=4;
 
 
     std::cout<<"\033[2J\033[1;1H";
@@ -517,6 +518,7 @@ int CMenu::chatMenu(std::string login)
         else if(3>buffer.length() && (buffer.find("0") != std::string::npos))
         {
             whileFlag=0;
+            flag=0;
             frame=ch.frameCreator(5, buffer, login, sockfd);
             if(0>(write(sockfd, &frame, sizeof(frame))))
             {
@@ -542,6 +544,7 @@ int CMenu::chatMenu(std::string login)
 
         }
     }
+    flag=0;
     return 0;
 
 

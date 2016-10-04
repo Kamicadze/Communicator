@@ -20,6 +20,8 @@ class CMessageHandler
     void sendToAll(CThPool*, SFrame);
     void chatRoomHandler(std::string, int, std::string, CThPool*);
     void writeToChat(std::map<std::string, int>, SFrame);
+    void inviteAccept(std::string, std::string, CThPool*, int);
+    void hostHandler(std::string, int, CThPool* , std::string);
 
 
 };

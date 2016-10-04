@@ -112,14 +112,12 @@ void CConnectionHandler::listening()
         if(false==endOfServerFlag)
         {
             
-            cout<<"odbieram"<<endl;
             n=recv(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL);
             if(n<0)
             {
                 //TODO: error handling
                 std::cerr<<"Error: message not recived"<<std::endl;
             }
-            cout<<"odebrałem"<<endl;
 
             CConnectionHandler *ch=new CConnectionHandler(3, m_tp, newsockfd, cliFrame);
 
@@ -155,7 +153,6 @@ void CConnectionHandler::clientHandler()
         ss.str(buff);   
         dt=static_cast<int>(m_clientFrame.m_dataType);
 
-        // std::cout<<"data: "<<ss<<std::endl;
 
 
 
@@ -224,13 +221,12 @@ void CConnectionHandler::clientHandler()
 
             case 5:     ///goodbye case
                 m_tp->online.erase(login);
-                cout<<"jestem tu"<<endl;
                 controlFlag=1;
                 break;
 
             case 6:
                 //TODO: joining chat room
-                o_mh.chatRoomHandler(m_clientFrame.m_CID, m_clisocket, m_clientFrame.m_messageData, m_tp);
+                o_mh.inviteAccept(m_clientFrame.m_CID, m_clientFrame.m_messageData, m_tp, m_clisocket);
                 break;
 
 
@@ -320,7 +316,6 @@ void CConnectionHandler::clientHandler()
         //        }
         //        else
         //        {
-        cout<<"odbieram"<<endl;
         recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL);
         //        }
     }

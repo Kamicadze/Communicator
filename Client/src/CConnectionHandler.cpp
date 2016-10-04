@@ -114,7 +114,11 @@ void CConnectionHandler::listening(int socketfd)
                 break;
 
             case 4:// chat room
-                std::cout<<blue<<frame.m_CID<<": "<<frame.m_messageData<<normal<<std::endl;
+                if(4==flag)
+                {
+                    std::cout<<blue<<frame.m_CID<<": "<<frame.m_messageData<<normal<<std::endl;
+                }
+
                 break;
 
             case 5: //error/quiting
@@ -146,18 +150,19 @@ void CConnectionHandler::listening(int socketfd)
 
                 break;
 
-            case 9:
+            case 45:    //erase user from map
                 write(socketfd, &frame, sizeof(frame));
 
                 break;
 
-            case 10:
+            case 46:    //invite accept
                 write(socketfd, &frame, sizeof(frame));
                 break;
 
-            case 11:
+            case 47:    //data of all chat users for new user
                 write(socketfd, &frame, sizeof(frame));
                 break;
+
 
             case 66:
                 std::cout<<frame.m_messageData<<std::endl;

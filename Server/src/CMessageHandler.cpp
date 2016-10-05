@@ -10,10 +10,10 @@ CMessageHandler::CMessageHandler()
 CMessageHandler::~CMessageHandler()
 {}
 
-void CMessageHandler::sendToAll(CThPool *tp, SFrame frame)
+void CMessageHandler::sendToAll(SFrame frame)
 {
     SFrame o_allFrame;
-    for(auto it=tp->broad.begin(); it!=tp->broad.end(); ++it)
+    for(auto it=broad.begin(); it!=broad.end(); ++it)
     {
         if(it->first!=frame.m_CID)
         {
@@ -30,11 +30,11 @@ void CMessageHandler::sendToAll(CThPool *tp, SFrame frame)
     }
 }
 
-void CMessageHandler::broadcast(CThPool *tp, int port, std::string login)
+void CMessageHandler::broadcast(int port, std::string login)
 {
 
     SFrame o_frame;
-    tp->broad[login]=port;
+    broad[login]=port;
     memset(&o_frame, 0, sizeof(o_frame));
     int dt=0;
     while(1)
@@ -43,7 +43,7 @@ void CMessageHandler::broadcast(CThPool *tp, int port, std::string login)
         dt=static_cast<int>(o_frame.m_dataType);
         if(dt==3)
         {
-            sendToAll(tp, o_frame);
+            sendToAll(o_frame);
         }
         else if(dt==5)
         {
@@ -55,13 +55,13 @@ void CMessageHandler::broadcast(CThPool *tp, int port, std::string login)
         }
         memset(&o_frame, 0, sizeof(o_frame));
     }
-    tp->broad.erase(login); 
+    broad.erase(login); 
 
 }
 
-void CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock, CThPool *tp)
+void CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock)
 {
-    tp->chatRooms[cliFrame.m_CID]=cliSock;  
+    chatRooms[cliFrame.m_CID]=cliSock;  
     std::istringstream ss;
     ss.str(cliFrame.m_messageData);
     std::string login, nUsers;
@@ -72,29 +72,29 @@ void CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock, CThPool *tp)
     {
         invFrame=cliFrame;
         strcpy(invFrame.m_DCID, login.c_str());
-        invFrame.m_destenationPort=tp->online[login];
+        invFrame.m_destenationPort=online[login];
         sprintf(invFrame.m_messageData, "Invite");
         invFrame.m_dataType=6; ///6 is invite type for user and join chat for server
         write(invFrame.m_destenationPort, &invFrame, sizeof(invFrame));
     }
 
-    hostHandler(cliFrame.m_CID, cliSock, tp, nUsers);
+    hostHandler(cliFrame.m_CID, cliSock, nUsers);
 
 
 
 }
 
-void CMessageHandler::inviteAccept(std::string login, std::string host, CThPool *tp, int port)
+void CMessageHandler::inviteAccept(std::string login, std::string host, int port)
 {
     SFrame frame;
 
-    if((tp->chatRooms.end()!=tp->chatRooms.find(host))&&(tp->online.end()!=tp->online.find(host)))
+    if((chatRooms.end()!=chatRooms.find(host))&&(online.end()!=online.find(host)))
     {
         //TODO: send information of accepting an invitation to host and get a map
         strcpy(frame.m_DCID, host.c_str());
         strcpy(frame.m_CID, login.c_str());
         frame.m_sourcePort=port;
-        frame.m_destenationPort=tp->online[host];
+        frame.m_destenationPort=online[host];
         sprintf(frame.m_messageData, "Invite accepted");
         frame.m_dataType=46; 
         write(frame.m_destenationPort, &frame, sizeof(frame));
@@ -105,7 +105,7 @@ void CMessageHandler::inviteAccept(std::string login, std::string host, CThPool 
         //45- erase
         //42- reserved for invites(comming soon TM)
         //46- invite accept
-        chatRoomHandler(login, port, host, tp);
+        chatRoomHandler(login, port, host);
 
 
     }
@@ -118,13 +118,12 @@ void CMessageHandler::inviteAccept(std::string login, std::string host, CThPool 
 //host: -recives inv accept and sends reply with users list -whenever new user comes online he sends the rest information -when he exits sends info to all that they exit too
 //user: -gets his map -sends to all that he quits -do map staff
 //
-void CMessageHandler::chatRoomHandler(std::string login, int port, std::string host, CThPool *tp)
+void CMessageHandler::chatRoomHandler(std::string login, int port, std::string host)
 {
     SFrame o_frame;
     memset(&o_frame, 0, sizeof(o_frame));
     int dt=0;
-    std::string nLogin, buff;
-    int nPort;
+    std::string buff;
 
     std::map<std::string, int> chat;
     chat[login]=port;
@@ -163,7 +162,7 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
         }
         else if(46==dt)//someone accepted an invite
         {
-            chat[o_frame.m_messageData]=tp->online[o_frame.m_messageData];
+            chat[o_frame.m_messageData]=online[o_frame.m_messageData];
         }
         else if(47==dt)//for new user data
         {
@@ -174,7 +173,7 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
             currentUsr.clear();
             while(chatUsers >> currentUsr)
             {
-                chat[currentUsr]=tp->online[currentUsr];
+                chat[currentUsr]=online[currentUsr];
             }
         }
 
@@ -183,7 +182,7 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
 
 }
 
-void CMessageHandler::hostHandler(std::string login, int port, CThPool *tp, std::string invs)
+void CMessageHandler::hostHandler(std::string login, int port, std::string invs)
 {
 
     //TODO:: start is host only, host have to send other list of users once again, or find other way to do this
@@ -217,7 +216,7 @@ void CMessageHandler::hostHandler(std::string login, int port, CThPool *tp, std:
         {
             std::string inviteLogin;
             inviteLogin=o_frame.m_messageData;
-            int invitePort=tp->online[inviteLogin];
+            int invitePort=online[inviteLogin];
             SFrame inviteFrame;
             memset(&inviteFrame, 0, sizeof(inviteFrame));
             sprintf(inviteFrame.m_CID, "%s",  login.c_str());
@@ -248,7 +247,7 @@ void CMessageHandler::hostHandler(std::string login, int port, CThPool *tp, std:
                     write(it->second, &o_frame, sizeof(o_frame));
                 }
             }
-            tp->chatRooms.erase(login);
+            chatRooms.erase(login);
             break;
         }
 
@@ -285,14 +284,14 @@ void CMessageHandler::hostHandler(std::string login, int port, CThPool *tp, std:
             write(o_frame.m_sourcePort, &ansFrame, sizeof(ansFrame));
 
 
-            chat[o_frame.m_CID]=tp->online[o_frame.m_CID];
+            chat[o_frame.m_CID]=online[o_frame.m_CID];
         }
 
         memset(&o_frame, 0, sizeof(o_frame));
     }
 
 }
-void CMessageHandler::writeToChat(std::map<std::string, int> chat, SFrame frame)
+void CMessageHandler::writeToChat(std::map<std::string, int> &chat, SFrame frame)
 {
 
     SFrame chatFrame;

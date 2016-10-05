@@ -3,6 +3,7 @@
 #include "ITask.h"
 #include "CThPool.h"
 #include "SFrame.h"
+#include "CSystem.h"
 
 class CConnectionHandler: public IConnectionHandler, public ITask
 {
@@ -10,17 +11,24 @@ class CConnectionHandler: public IConnectionHandler, public ITask
         int m_flag;
         int m_socketfd;
         int m_clisocket;
-        CThPool *m_tp;
+        IThPool *m_tp;
+        ISystem *m_sys;
         SFrame m_clientFrame;
         
     public: 
-        CConnectionHandler(int, CThPool*, int);
-        CConnectionHandler(int, CThPool*);
-        CConnectionHandler(int, CThPool*, int, SFrame);
+        CConnectionHandler(int, IThPool*, int);
+        CConnectionHandler(int, IThPool*, ISystem* );
+        CConnectionHandler(int, int, SFrame);
         CConnectionHandler(){};
         virtual ~CConnectionHandler();
-        void listening();
+        int binding(sockaddr_in&);
+        int listening();
         void run();
-        void clientHandler();
-        void writeAnswer(std::string, int);
+        int clientHandler();
+        int socketCreator();
+        int writeAnswer(std::string, int);
+        int handshake();
+        int accepting(int&, sockaddr_in&, int&);
+        int recving(SFrame&, int&);
+
 };

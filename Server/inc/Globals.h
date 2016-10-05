@@ -10,6 +10,10 @@
 
 extern bool endOfServerFlag;
 
+extern std::map<std::string, int> online;
+extern std::map<std::string, int> chatRooms;
+extern std::map<std::string, int> broad;
+
 static void *getWork(void* par)
 {
     ITask *mw=0;

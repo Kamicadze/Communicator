@@ -18,7 +18,7 @@
 using namespace std;
 
 
-CConnectionHandler::CConnectionHandler(int flag, CThPool *tp, int clisocket)
+CConnectionHandler::CConnectionHandler(int flag, IThPool *tp, int clisocket)
     :m_flag(flag),
     m_clisocket(clisocket),
     m_tp(tp)
@@ -26,18 +26,19 @@ CConnectionHandler::CConnectionHandler(int flag, CThPool *tp, int clisocket)
 
 }
 
-CConnectionHandler::CConnectionHandler(int flag, CThPool *tp)
+CConnectionHandler::CConnectionHandler(int flag, IThPool *tp, ISystem *sys)
     :m_flag(flag),
-    m_tp(tp)
+    m_tp(tp),
+    m_sys(sys)
 {
 
 }
 
-CConnectionHandler::CConnectionHandler(int flag, CThPool *tp, int clisock, SFrame cliFrame)
+CConnectionHandler::CConnectionHandler(int flag, int clisock, SFrame cliFrame)
     :m_flag(flag),
     m_clisocket(clisock),
-    m_tp(tp),
     m_clientFrame(cliFrame)
+    
 {}
 
 CConnectionHandler::~CConnectionHandler()
@@ -49,7 +50,7 @@ void CConnectionHandler::run()
     {
 
         case 2:
-            listening();
+            handshake();
             break;
 
         case 3:
@@ -62,20 +63,84 @@ void CConnectionHandler::run()
 
 }
 
-void CConnectionHandler::listening()
+int CConnectionHandler::socketCreator()
 {
-    int port, clilen, newsockfd, n;
-    m_socketfd=socket(AF_INET, SOCK_STREAM, 0);
+    m_socketfd=m_sys->sockets(AF_INET, SOCK_STREAM, 0);
+    if(m_socketfd < 0)
+    {
+        std::cerr<<"ERROR: opening socket"<<std::endl;
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int CConnectionHandler::binding(sockaddr_in &serv_addr)
+{
+    if(m_sys->binds(m_socketfd, reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr))<0)
+    {
+        std::cerr<<"ERROR: binding";
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+}
+
+int CConnectionHandler::listening()
+{
+    if(m_sys->listens(m_socketfd, 5)==-1)
+    {
+        std::cerr<<"ERROR: listening"<<std::endl;;
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+}
+
+int CConnectionHandler::accepting(int &newsockfd, sockaddr_in &cli_addr, int &clilen)
+{
+    newsockfd=m_sys->accepts(m_socketfd, reinterpret_cast<sockaddr *>(&cli_addr), (socklen_t*)&clilen);
+    if(newsockfd < 0)
+    {
+        std::cerr<<"ERROR: accepting";
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+}
+
+int CConnectionHandler::recving(SFrame &cliFrame, int &newsockfd)
+{
+    if(0>(m_sys->recvs(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL)))
+    {  
+        std::cerr<<"ERROR: message not recived"<<std::endl;
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+}
+
+int CConnectionHandler::handshake()
+{
+    int port, clilen, newsockfd, retValue;
     sockaddr_in serv_addr, cli_addr;
     SFrame cliFrame;
 
-
-
-    if(m_socketfd < 0)
-    {
-        perror("ERROR opening socket");
-        exit(1);
-    }
+    retValue=socketCreator();
 
     memset(&serv_addr, 0, sizeof(serv_addr));
     port=5001;
@@ -84,42 +149,30 @@ void CConnectionHandler::listening()
     serv_addr.sin_addr.s_addr=INADDR_ANY;
     serv_addr.sin_port= htons(port);
 
-    if(bind(m_socketfd, reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr))<0)
+    if(0==retValue)
     {
-        perror("ERROR on binding");
-        exit(1);
+        retValue=binding(serv_addr);
     }
 
 
-
-    while(false==endOfServerFlag)
+    while(false==endOfServerFlag && 0==retValue)
     {
-        if(listen(m_socketfd, 5)==-1)
-        {
-            perror("listen");
-            exit(1);
-        }
+        retValue=listening();
+
         clilen = sizeof(cli_addr);
 
-        newsockfd=accept(m_socketfd, reinterpret_cast<sockaddr *>(&cli_addr), (socklen_t*)&clilen);
-        if(newsockfd < 0)
+        if(0==retValue)
         {
-            perror("ERROR on accept");
-            exit(1);
+            retValue=accepting(newsockfd, cli_addr, clilen);
         }
 
 
-        if(false==endOfServerFlag)
+        if(false==endOfServerFlag && 0==retValue)
         {
-            
-            n=recv(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL);
-            if(n<0)
-            {
-                //TODO: error handling
-                std::cerr<<"Error: message not recived"<<std::endl;
-            }
+            recving(cliFrame, newsockfd);
 
-            CConnectionHandler *ch=new CConnectionHandler(3, m_tp, newsockfd, cliFrame);
+
+            CConnectionHandler *ch=new CConnectionHandler(3, newsockfd, cliFrame);
 
             if(ch)
             {
@@ -133,10 +186,11 @@ void CConnectionHandler::listening()
     }
     close(newsockfd);
     close(m_socketfd);
+    return retValue;
 
 
 }
-void CConnectionHandler::clientHandler()
+int CConnectionHandler::clientHandler()
 {
     string buff;
 
@@ -165,9 +219,9 @@ void CConnectionHandler::clientHandler()
                 ss >> login >> password;
 
 
-                if((true==o_dbh.authenticate(login, password))&&(m_tp->online.find(login)==m_tp->online.end()))
+                if((true==o_dbh.authenticate(login, password))&&(online.find(login)==online.end()))
                 {
-                    m_tp->online[login]=m_clisocket;
+                    online[login]=m_clisocket;
                     tmp.clear();
                     tmp="Success";
                     writeAnswer(tmp, 1);
@@ -191,7 +245,7 @@ void CConnectionHandler::clientHandler()
 
                 if(true==o_dbh.authenticate(login, password))
                 {
-                    m_tp->online.erase(login);
+                    online.erase(login);
                     o_dbh.deleteUser(login, password);
 
                     tmp.clear();
@@ -210,23 +264,23 @@ void CConnectionHandler::clientHandler()
 
             case 3:
 
-                o_mh.broadcast(m_tp, m_clisocket, m_clientFrame.m_CID);
+                o_mh.broadcast(m_clisocket, m_clientFrame.m_CID);
 
                 break;
 
             case 4:
 
-                o_mh.createChatRoom(m_clientFrame, m_clisocket, m_tp);
+                o_mh.createChatRoom(m_clientFrame, m_clisocket);
                 break;
 
             case 5:     ///goodbye case
-                m_tp->online.erase(login);
+                online.erase(login);
                 controlFlag=1;
                 break;
 
             case 6:
                 //TODO: joining chat room
-                o_mh.inviteAccept(m_clientFrame.m_CID, m_clientFrame.m_messageData, m_tp, m_clisocket);
+                o_mh.inviteAccept(m_clientFrame.m_CID, m_clientFrame.m_messageData, m_clisocket);
                 break;
 
 
@@ -252,7 +306,7 @@ void CConnectionHandler::clientHandler()
 
             case 8: //map sender
                 tmp.clear();
-                for(auto it=m_tp->online.begin(); it!=m_tp->online.end(); it++)
+                for(auto it=online.begin(); it!=online.end(); it++)
                 {
                     if((tmp.length()+it->first.length()+2)>149)
                     {
@@ -276,21 +330,7 @@ void CConnectionHandler::clientHandler()
 
             default:
 
-                /*  ss.str(string());   
-                    ss.str(m_clientFrame.m_CID);    
-                    ss >> m_clientFrame.m_DCID;
-                    sprintf(m_clientFrame.m_CID, "Server");
-                    tmp32=m_clientFrame.m_sourceAddress;
-                    m_clientFrame.m_sourceAddress=m_clientFrame.m_destenationAddress;
-                    m_clientFrame.m_destenationAddress=tmp32;
 
-                    tmp8=m_clientFrame.m_sourcePort;
-                    m_clientFrame.m_sourcePort=m_clientFrame.m_destenationPort;
-                    m_clientFrame.m_destenationPort=tmp8;
-
-                    sprintf(m_clientFrame.m_messageData, "ERROR");
-
-                    write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));*/
                 break;
 
         }
@@ -326,8 +366,9 @@ void CConnectionHandler::clientHandler()
     std::cout<<"sent"<<std::endl;
     close(m_clisocket);
     std::cout<<"closed"<<std::endl;
+    return 0;
 }
-void CConnectionHandler::writeAnswer(std::string msg, int dataType)
+int CConnectionHandler::writeAnswer(std::string msg, int dataType)
 {
     uint32_t tmp32;
     uint8_t tmp8;
@@ -349,6 +390,8 @@ void CConnectionHandler::writeAnswer(std::string msg, int dataType)
     strcpy(m_clientFrame.m_messageData, msg.c_str());
 
     write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
+
+    return 0;
 
 }
 

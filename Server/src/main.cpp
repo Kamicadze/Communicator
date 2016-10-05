@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include "CSystem.h"
 
 static uint16_t loop;
 
@@ -22,21 +23,25 @@ void helpListenToFinish();
 int main()
 {
     struct sigaction sa; ///struct in here is a must have, otherwise sigaction
-                         ///treated as a method
+    ///treated as a method
     sa.sa_handler=breakit;
     sigemptyset(&sa.sa_mask);
     static const int thNumber=10;
     CThPool *tp= new CThPool(thNumber);
     if(tp)
     {
-        CConnectionHandler *ch=new CConnectionHandler(2, tp);
-        if(ch)
+        CSystem *sys=new CSystem();
+        if(sys)
         {
-            tp->addTask(ch);
-        }
-        else
-        {
-            std::cerr<<"Error: Memory not allocated"<<std::endl;
+            CConnectionHandler *ch=new CConnectionHandler(2, tp, sys);
+            if(ch)
+            {
+                tp->addTask(ch);
+            }
+            else
+            {
+                std::cerr<<"Error: Memory not allocated"<<std::endl;
+            }
         }
     }
     else
@@ -46,10 +51,10 @@ int main()
 
     while(false==endOfServerFlag)
     {
-		//TODO: infinite loop which will break after getting kill sig	
+        //TODO: infinite loop which will break after getting kill sig	
         sigaction(SIGINT, &sa, NULL);        
-           
-        
+
+
     }
     tp->finish();
     helpListenToFinish();

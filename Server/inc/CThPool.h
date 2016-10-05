@@ -20,8 +20,4 @@ public:
     void finish();
     bool hasWork();
     void waitForCompletion();
-
-    std::map<std::string, int> online;
-    std::map<std::string, int> broad;
-    std::map<std::string, int> chatRooms; // metody na mapy
 };

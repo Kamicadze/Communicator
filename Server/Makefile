@@ -5,10 +5,10 @@ LDFLAGS= -pthread
 LIBS= ../Common/libgtest.a ../Common/libgmock.a
 SOURCES= src/main.cpp src/CWorkQueue.cpp src/CThPool.cpp \
 	src/CDatabaseHandler.cpp src/CConnectionHandler.cpp \
-	src/CMessageHandler.cpp src/Globals.cpp
-S4T= src/CWorkQueue.cpp
+	src/CMessageHandler.cpp src/Globals.cpp src/CSystem.cpp
+S4T= src/CConnectionHandler.cpp
 INC= inc 
-TESTS= tests/src/TWorkQueue.cpp
+TESTS= tests/src/TConnectionHandler.cpp
 CXX= g++
 NAME= bin/server
 TNAME= bin/Tests

@@ -1,6 +1,7 @@
-g++ -pthread ../tests/src/TWorkQueue.cpp ../src/CWorkQueue.cpp \
--isystem ../../Gincludes \
+g++ -std=c++11 -pthread ../tests/src/TConnectionHandler.cpp ../src/CConnectionHandler.cpp \
+../src/Globals.cpp ../src/CMessageHandler.cpp ../src/CDatabaseHandler.cpp \
+-isystem ../../Common \
 -isystem ../tests/inc \
 -isystem ../inc \
 -isystem ../pub \
-../../Gincludes/libgtest.a ../../Gincludes/libgmock.a
+../../Common/libgtest.a ../../Common/libgmock.a

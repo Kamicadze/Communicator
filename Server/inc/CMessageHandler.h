@@ -11,6 +11,7 @@ class CMessageHandler
     private:
     std::map<std::string, int> m_chatUsers;
     std::string m_host;
+    enum ChatHandlers_t: int;
 
     public:
     CMessageHandler();

@@ -1,5 +1,5 @@
-g++ -std=c++11 -pthread ../tests/src/TConnectionHandler.cpp ../src/CConnectionHandler.cpp \
-../src/Globals.cpp ../src/CMessageHandler.cpp ../src/CDatabaseHandler.cpp \
+g++ -std=c++11 -pthread ../tests/src/TDatabaseHandler.cpp ../src/CDatabaseHandler.cpp \
+../src/Globals.cpp \
 -isystem ../../Common \
 -isystem ../tests/inc \
 -isystem ../inc \

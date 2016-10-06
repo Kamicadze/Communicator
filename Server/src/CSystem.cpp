@@ -1,4 +1,5 @@
 #include "CSystem.h"
+#include <unistd.h>
 
 CSystem::CSystem()
 {}
@@ -44,6 +45,6 @@ int CSystem::recvs(int sock, void *buff, size_t size, int flag)
 int CSystem::writes(int sock, const void* buff, size_t size)
 {
     int retValue;
-//    retValue=write(sock, buff, size);
+    retValue=write(sock, buff, size);
     return retValue;
 }

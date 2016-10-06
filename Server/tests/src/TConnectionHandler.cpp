@@ -4,6 +4,7 @@
 #include "CConnectionHandler.h"
 #include "MThPool.h"
 #include "Globals.h"
+#include "MDatabaseHandler.h"
 
 using ::testing::_;
 using ::testing::Return;
@@ -239,8 +240,9 @@ TEST(FlagGoesTrue, Handshaking)
 ACTION(FlagChange)
 {
     endOfServerFlag=true;   
+    return 0;
 }
-/*
+
 TEST(FlagGoesTrueWhileListen, Handshaking)
 {
     MSystem sys;
@@ -265,12 +267,12 @@ TEST(FlagGoesTrueWhileListen, Handshaking)
 
     EXPECT_CALL(sys, listens(_, _))
         .Times(1)
-        .WillOnce(Return(0))
+        .WillOnce(FlagChange())
         .RetiresOnSaturation();
 
     EXPECT_CALL(sys, accepts(_, _, _))
         .Times(1)
-        .WillOnce(Return(-1))
+        .WillOnce(Return(0))
 
         .RetiresOnSaturation();
 
@@ -281,7 +283,31 @@ TEST(FlagGoesTrueWhileListen, Handshaking)
     CConnectionHandler *ch=new CConnectionHandler(2, &tp, &sys);
 
     ch->run();
-    std::cout<<"flag: "<<endOfServerFlag<<std::endl;
+    endOfServerFlag=false;
+}
+
+ACTION(FlagChangeRT)
+{
+    endOfServerFlag=true;   
+    return true;
+}
+/*
+TEST(Case1AuthenticationTrue, ClientHandling)
+{
+    SFrame frame;
+    MDatabaseHandler db;
+    CConnectionHandler *ch=new CConnectionHandler(3, 1, frame, &db);
+
+    ch->m_clientFrame.m_dataType=1;
+    sprintf(ch->m_clientFrame.m_messageData, "kami 123456");
+
+    EXPECT_CALL(db, authenticate(_, _))
+        .Times(1)
+        .WillOnce(FlagChangeRT())
+        .RetiresOnSaturation();
+    
+    ch->clientHandler();
+    endOfServerFlag=false;
 }*/
 
 int main(int argc, char** argv)

@@ -90,7 +90,6 @@ bool CDatabaseHandler::deleteUser(std::string login, std::string password)
 }
 bool CDatabaseHandler::authenticate(std::string log, std::string password)
 {
-    std::cout<<"wchodze"<<std::endl;
     bool returnValue=false;
     std::ifstream dbFile("../db/database.txt");
     std::string line, login, pass, onl, ip;
@@ -109,16 +108,10 @@ bool CDatabaseHandler::authenticate(std::string log, std::string password)
             }
             else
             {
-
                 login.clear();
-
                 pass.clear();
-
-
             }
-
         }
-
     }
     else
     {

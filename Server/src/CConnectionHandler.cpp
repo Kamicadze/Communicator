@@ -34,26 +34,52 @@ CConnectionHandler::CConnectionHandler(int flag, IThPool *tp, ISystem *sys)
 
 }
 
-CConnectionHandler::CConnectionHandler(int flag, int clisock, SFrame cliFrame)
+CConnectionHandler::CConnectionHandler(int flag, int clisock, SFrame cliFrame, IDatabaseHandler *dbh)
     :m_flag(flag),
     m_clisocket(clisock),
-    m_clientFrame(cliFrame)
+    m_clientFrame(cliFrame),
+    m_dbh(dbh)
     
 {}
 
 CConnectionHandler::~CConnectionHandler()
 {}
 
+enum CConnectionHandler::RunFlag_t: int
+{
+    SHAKING=2,
+    CLIENTHANDLING=3
+};
+
+enum CConnectionHandler::SwitchDataTypes_t: int
+{
+    LOGGING=1,
+    DELETING=2,
+    BROADCAST=3,
+    CHATROOM=4,
+    EXIT=5,
+    JOININGCHAT=6,
+    CREATINGUSER=7,
+    PASSONLINE=8,
+    SHUTDOWN=66
+};
+
+enum CConnectionHandler::ErrorHandlers_t: int
+{
+    SUCCES=0,
+    UNSUCCESFUL=1
+};
+
 void CConnectionHandler::run()
 {
     switch(m_flag)
     {
 
-        case 2:
+        case SHAKING:
             handshake();
             break;
 
-        case 3:
+        case CLIENTHANDLING:
             clientHandler();
             break;
 
@@ -69,11 +95,11 @@ int CConnectionHandler::socketCreator()
     if(m_socketfd < 0)
     {
         std::cerr<<"ERROR: opening socket"<<std::endl;
-        return 1;
+        return UNSUCCESFUL;
     }
     else
     {
-        return 0;
+        return SUCCES;
     }
 }
 
@@ -82,11 +108,11 @@ int CConnectionHandler::binding(sockaddr_in &serv_addr)
     if(m_sys->binds(m_socketfd, reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr))<0)
     {
         std::cerr<<"ERROR: binding";
-        return 1;
+        return UNSUCCESFUL;
     }
     else
     {
-        return 0;
+        return SUCCES;
     }
 
 }
@@ -96,11 +122,11 @@ int CConnectionHandler::listening()
     if(m_sys->listens(m_socketfd, 5)==-1)
     {
         std::cerr<<"ERROR: listening"<<std::endl;;
-        return 1;
+        return UNSUCCESFUL;
     }
     else
     {
-        return 0;
+        return SUCCES;
     }
 
 }
@@ -111,11 +137,11 @@ int CConnectionHandler::accepting(int &newsockfd, sockaddr_in &cli_addr, int &cl
     if(newsockfd < 0)
     {
         std::cerr<<"ERROR: accepting";
-        return 1;
+        return UNSUCCESFUL;
     }
     else
     {
-        return 0;
+        return SUCCES;
     }
 
 }
@@ -125,11 +151,11 @@ int CConnectionHandler::recving(SFrame &cliFrame, int &newsockfd)
     if(0>(m_sys->recvs(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL)))
     {  
         std::cerr<<"ERROR: message not recived"<<std::endl;
-        return 1;
+        return UNSUCCESFUL;
     }
     else
     {
-        return 0;
+        return SUCCES;
     }
 
 }
@@ -139,6 +165,7 @@ int CConnectionHandler::handshake()
     int port, clilen, newsockfd, retValue;
     sockaddr_in serv_addr, cli_addr;
     SFrame cliFrame;
+    CDatabaseHandler *o_dbh=new CDatabaseHandler();
 
     retValue=socketCreator();
 
@@ -149,13 +176,13 @@ int CConnectionHandler::handshake()
     serv_addr.sin_addr.s_addr=INADDR_ANY;
     serv_addr.sin_port= htons(port);
 
-    if(0==retValue)
+    if(UNSUCCESFUL==retValue)
     {
         retValue=binding(serv_addr);
     }
 
 
-    while(false==endOfServerFlag && 0==retValue)
+    while(false==endOfServerFlag && UNSUCCESFUL==retValue)
     {
         retValue=listening();
 
@@ -167,15 +194,20 @@ int CConnectionHandler::handshake()
         }
 
 
-        if(false==endOfServerFlag && 0==retValue)
+        if(false==endOfServerFlag && UNSUCCESFUL==retValue)
         {
-            if(0==recving(cliFrame, newsockfd))
+            if(UNSUCCESFUL==recving(cliFrame, newsockfd))
             {
-                CConnectionHandler *ch=new CConnectionHandler(3, newsockfd, cliFrame);
+                CConnectionHandler *ch=new CConnectionHandler(CLIENTHANDLING, newsockfd, cliFrame, o_dbh);
 
-                if(ch)
+                if(ch && o_dbh)
                 {
                     m_tp->addTask(ch);
+                }
+                else
+                {
+                    delete ch;
+                    delete o_dbh;
                 }
             }
         }
@@ -195,10 +227,9 @@ int CConnectionHandler::clientHandler()
     string buff;
 
     string tmp;
-    int controlFlag=0;
+    int controlFlag=SUCCES;
     int dt=0;
     string login, password;
-    CDatabaseHandler o_dbh;
     CMessageHandler o_mh;
     while(false==endOfServerFlag)
     {
@@ -213,85 +244,85 @@ int CConnectionHandler::clientHandler()
         switch(dt)
         {
 
-            case 1:     ///handshake case
+            case LOGGING:     ///handshake case
                 login.clear();
                 password.clear();
                 ss >> login >> password;
 
 
-                if((true==o_dbh.authenticate(login, password))&&(online.find(login)==online.end()))
+                if((true==m_dbh->authenticate(login, password))&&(online.find(login)==online.end()))
                 {
                     online[login]=m_clisocket;
                     tmp.clear();
                     tmp="Success";
-                    writeAnswer(tmp, 1);
+                    writeAnswer(tmp, LOGGING);
 
                 }
                 else
                 {
                     tmp.clear();
                     tmp="Wrong Login and/or Password";
-                    writeAnswer(tmp, 5);
+                    writeAnswer(tmp, EXIT);
 
                 }
 
                 break;
 
-            case 2:
+            case DELETING:
                 login.clear();
                 password.clear();
                 ss >> login >> password;
 
 
-                if(true==o_dbh.authenticate(login, password))
+                if(true==m_dbh->authenticate(login, password))
                 {
                     online.erase(login);
-                    o_dbh.deleteUser(login, password);
+                    m_dbh->deleteUser(login, password);
 
                     tmp.clear();
                     tmp="Success";
-                    writeAnswer(tmp, 2);
+                    writeAnswer(tmp, DELETING);
 
                 }
                 else
                 {
                     tmp.clear();
                     tmp="Wrong Login and/or password";
-                    writeAnswer(tmp, 5);
+                    writeAnswer(tmp, EXIT);
                 }
 
                 break;
 
-            case 3:
+            case BROADCAST:
 
                 o_mh.broadcast(m_clisocket, m_clientFrame.m_CID);
 
                 break;
 
-            case 4:
+            case CHATROOM:
 
                 o_mh.createChatRoom(m_clientFrame, m_clisocket);
                 break;
 
-            case 5:     ///goodbye case
+            case EXIT:     ///goodbye case
                 online.erase(login);
-                controlFlag=1;
+                controlFlag=UNSUCCESFUL;
                 break;
 
-            case 6:
+            case JOININGCHAT:
                 //TODO: joining chat room
                 o_mh.inviteAccept(m_clientFrame.m_CID, m_clientFrame.m_messageData, m_clisocket);
                 break;
 
 
-            case 7:
+            case CREATINGUSER:
                 ss >> login >> password;
 
-                if(true==o_dbh.createUser(login, password))
+                if(true==m_dbh->createUser(login, password))
                 {
                     tmp.clear();
                     tmp="Succes";
-                    writeAnswer(tmp, 7);
+                    writeAnswer(tmp, CREATINGUSER);
 
                 }
                 else
@@ -299,18 +330,18 @@ int CConnectionHandler::clientHandler()
 
                     tmp.clear();
                     tmp="Cannot add a user";
-                    writeAnswer(tmp, 5);
+                    writeAnswer(tmp, EXIT);
                 }
 
                 break;
 
-            case 8: //map sender
+            case PASSONLINE: //map sender
                 tmp.clear();
                 for(auto it=online.begin(); it!=online.end(); it++)
                 {
                     if((tmp.length()+it->first.length()+2)>149)
                     {
-                        m_clientFrame.m_dataType=8;
+                        m_clientFrame.m_dataType=PASSONLINE;
                         sprintf(m_clientFrame.m_messageData, "%s", tmp.c_str());
 
                         write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
@@ -319,13 +350,13 @@ int CConnectionHandler::clientHandler()
                     tmp.append(it->first);
                     tmp.append("  ");
                 }
-                m_clientFrame.m_dataType=8;
+                m_clientFrame.m_dataType=PASSONLINE;
                 sprintf(m_clientFrame.m_messageData, "%s", tmp.c_str());
 
                 write(m_clisocket, &m_clientFrame, sizeof(m_clientFrame));
                 break;
 
-            case 66:
+            case SHUTDOWN:
 
 
             default:
@@ -334,7 +365,7 @@ int CConnectionHandler::clientHandler()
                 break;
 
         }
-        if(1==controlFlag)
+        if(UNSUCCESFUL==controlFlag)
         {
             break;
         }
@@ -356,7 +387,10 @@ int CConnectionHandler::clientHandler()
         //        }
         //        else
         //        {
-        recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL);
+        if(false==endOfServerFlag)
+        {
+            recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL);
+        }
         //        }
     }
 

@@ -26,8 +26,8 @@ int main()
     ///treated as a method
     sa.sa_handler=breakit;
     sigemptyset(&sa.sa_mask);
-    static const int thNumber=10;
-    CThPool *tp= new CThPool(thNumber);
+    static const int THNUMBER=10;
+    CThPool *tp= new CThPool(THNUMBER);
     if(tp)
     {
         CSystem *sys=new CSystem();

@@ -4,6 +4,7 @@
 #include "CThPool.h"
 #include "SFrame.h"
 #include "CSystem.h"
+#include "CDatabaseHandler.h"
 
 class CConnectionHandler: public IConnectionHandler, public ITask
 {
@@ -14,11 +15,16 @@ class CConnectionHandler: public IConnectionHandler, public ITask
         IThPool *m_tp;
         ISystem *m_sys;
         SFrame m_clientFrame;
+        IDatabaseHandler *m_dbh;
+        enum RunFlag_t: int;
+        enum SwitchDataTypes_t: int;
+        enum ErrorHandlers_t: int;
+        FRIEND_TEST(Case1AuthenticationTrue, ClientHandling);
         
     public: 
         CConnectionHandler(int, IThPool*, int);
         CConnectionHandler(int, IThPool*, ISystem* );
-        CConnectionHandler(int, int, SFrame);
+        CConnectionHandler(int, int, SFrame, IDatabaseHandler*);
         CConnectionHandler(){};
         virtual ~CConnectionHandler();
         int binding(sockaddr_in&);

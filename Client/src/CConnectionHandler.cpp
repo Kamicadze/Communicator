@@ -86,8 +86,9 @@ void CConnectionHandler::listening(int socketfd)
     SFrame frame;
     memset(&frame, 0, sizeof(frame));
     int dt=0;
+    int workFlag=1;
 
-    while(1)
+    while(workFlag)
     {
         recv(socketfd, &frame, sizeof(frame), MSG_WAITALL);
         dt=static_cast<int>(frame.m_dataType);
@@ -166,6 +167,9 @@ void CConnectionHandler::listening(int socketfd)
 
             case 66:
                 std::cout<<frame.m_messageData<<std::endl;
+                std::cout<<"Connection Lost"<<std::endl;
+                workFlag=0;
+                close(socketfd);
 
                 break;
 

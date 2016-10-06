@@ -169,14 +169,14 @@ int CConnectionHandler::handshake()
 
         if(false==endOfServerFlag && 0==retValue)
         {
-            recving(cliFrame, newsockfd);
-
-
-            CConnectionHandler *ch=new CConnectionHandler(3, newsockfd, cliFrame);
-
-            if(ch)
+            if(0==recving(cliFrame, newsockfd))
             {
-                m_tp->addTask(ch);
+                CConnectionHandler *ch=new CConnectionHandler(3, newsockfd, cliFrame);
+
+                if(ch)
+                {
+                    m_tp->addTask(ch);
+                }
             }
         }
         newsockfd=0;

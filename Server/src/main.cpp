@@ -14,8 +14,6 @@
 #include <netinet/in.h>
 #include "CSystem.h"
 
-static uint16_t loop;
-
 void breakit(int signum);
 void helpListenToFinish();
 
@@ -28,6 +26,8 @@ int main()
     sigemptyset(&sa.sa_mask);
     static const int THNUMBER=10;
     CThPool *tp= new CThPool(THNUMBER);
+    tp->init();
+    std::cout<<"wchodzi"<<std::endl;
     if(tp)
     {
         CSystem *sys=new CSystem();
@@ -58,6 +58,7 @@ int main()
     }
     tp->finish();
     helpListenToFinish();
+    tp->clear();
     delete tp;
     return 0;
 }

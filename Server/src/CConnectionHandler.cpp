@@ -45,30 +45,7 @@ CConnectionHandler::CConnectionHandler(int flag, int clisock, SFrame cliFrame, I
 CConnectionHandler::~CConnectionHandler()
 {}
 
-enum CConnectionHandler::RunFlag_t: int
-{
-    SHAKING=2,
-    CLIENTHANDLING=3
-};
 
-enum CConnectionHandler::SwitchDataTypes_t: int
-{
-    LOGGING=1,
-    DELETING=2,
-    BROADCAST=3,
-    CHATROOM=4,
-    EXIT=5,
-    JOININGCHAT=6,
-    CREATINGUSER=7,
-    PASSONLINE=8,
-    SHUTDOWN=66
-};
-
-enum CConnectionHandler::ErrorHandlers_t: int
-{
-    SUCCES=0,
-    UNSUCCESFUL=1
-};
 
 void CConnectionHandler::run()
 {
@@ -91,14 +68,18 @@ void CConnectionHandler::run()
 
 int CConnectionHandler::socketCreator()
 {
+    cout<<"in sock"<<endl;
     m_socketfd=m_sys->sockets(AF_INET, SOCK_STREAM, 0);
+    cout<<"sock done"<<endl;
     if(m_socketfd < 0)
     {
+        cout<<"in ret unsuc"<<endl;
         std::cerr<<"ERROR: opening socket"<<std::endl;
         return UNSUCCESFUL;
     }
     else
     {
+        cout<<"in ret succes"<<endl;
         return SUCCES;
     }
 }
@@ -176,13 +157,13 @@ int CConnectionHandler::handshake()
     serv_addr.sin_addr.s_addr=INADDR_ANY;
     serv_addr.sin_port= htons(port);
 
-    if(UNSUCCESFUL==retValue)
+    if(SUCCES==retValue)
     {
         retValue=binding(serv_addr);
     }
 
 
-    while(false==endOfServerFlag && UNSUCCESFUL==retValue)
+    while(false==endOfServerFlag && SUCCES==retValue)
     {
         retValue=listening();
 
@@ -194,9 +175,9 @@ int CConnectionHandler::handshake()
         }
 
 
-        if(false==endOfServerFlag && UNSUCCESFUL==retValue)
+        if(false==endOfServerFlag && SUCCES==retValue)
         {
-            if(UNSUCCESFUL==recving(cliFrame, newsockfd))
+            if(SUCCES==recving(cliFrame, newsockfd))
             {
                 CConnectionHandler *ch=new CConnectionHandler(CLIENTHANDLING, newsockfd, cliFrame, o_dbh);
 

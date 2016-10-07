@@ -16,6 +16,8 @@ private:
 public:
     CThPool(int);
     ~CThPool();
+    int init();
+    int clear();
     void addTask(ITask*);
     void finish();
     bool hasWork();

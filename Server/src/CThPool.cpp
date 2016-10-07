@@ -10,14 +10,13 @@ using namespace std;
 CThPool::CThPool(int n)
     :m_threads(0),
     m_numThreads(n){
-//      online["server"]=5001;
         m_threads = new pthread_t[n];
-        for(int i=0;i<n;++i)
-        {
-            ///creating new thread with function getWork which than
-            ///send it to waiting for a real task
-            pthread_create(&(m_threads[i]),0, getWork, &m_oWorkQueue);
-        }
+    for(int i=0;i<n;++i)
+    {
+        //creating new thread with function getWork which than
+        //send it to waiting for a real task
+        pthread_create(&(m_threads[i]),0, getWork, &m_oWorkQueue);
+    }
     }
 
 CThPool::~CThPool()
@@ -29,11 +28,24 @@ CThPool::~CThPool()
         pthread_join(m_threads[i], 0);
     }
     delete[] m_threads;
-    
+}
+
+int CThPool::init()
+{
+
+    return 0;
+}
+
+int CThPool::clear()
+{
+
+
+    return 0;
 }
 
 void CThPool::addTask(ITask *nt)
 {
+
     m_oWorkQueue.addTask(nt);
 }
 
@@ -49,7 +61,7 @@ bool CThPool::hasWork()
 
 void CThPool::waitForCompletion()
 {
-    
+
     while(m_oWorkQueue.hasWork())
     {}
 }

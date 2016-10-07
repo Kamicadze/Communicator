@@ -16,9 +16,6 @@ class CConnectionHandler: public IConnectionHandler, public ITask
         ISystem *m_sys;
         SFrame m_clientFrame;
         IDatabaseHandler *m_dbh;
-        enum RunFlag_t: int;
-        enum SwitchDataTypes_t: int;
-        enum ErrorHandlers_t: int;
         FRIEND_TEST(Case1AuthenticationTrue, ClientHandling);
         
     public: 
@@ -37,4 +34,28 @@ class CConnectionHandler: public IConnectionHandler, public ITask
         int accepting(int&, sockaddr_in&, int&);
         int recving(SFrame&, int&);
 
+};
+enum ERunFlag
+{
+    SHAKING=2,
+    CLIENTHANDLING=3
+};
+
+enum ESwitchDataTypes
+{
+    LOGGING=1,
+    DELETING=2,
+    BROADCAST=3,
+    CHATROOM=4,
+    EXIT=5,
+    JOININGCHAT=6,
+    CREATINGUSER=7,
+    PASSONLINE=8,
+    SHUTDOWN=66
+};
+
+enum EErrorHandlers
+{
+    SUCCES=0,
+    UNSUCCESFUL=1
 };

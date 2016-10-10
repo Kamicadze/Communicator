@@ -25,18 +25,25 @@ int main()
     sa.sa_handler=breakit;
     sigemptyset(&sa.sa_mask);
     static const int THNUMBER=10;
-    CThPool *tp= new CThPool(THNUMBER);
-    tp->init();
-    std::cout<<"wchodzi"<<std::endl;
+    CSystem *sys=new CSystem();
+    CWorkQueue *wq=new CWorkQueue();
+    CThPool *tp= new CThPool(THNUMBER, wq, sys);
+
     if(tp)
     {
-        CSystem *sys=new CSystem();
+    tp->init();
+
+
         if(sys)
         {
+
             CConnectionHandler *ch=new CConnectionHandler(2, tp, sys);
+
             if(ch)
             {
+
                 tp->addTask(ch);
+
             }
             else
             {

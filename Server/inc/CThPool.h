@@ -5,20 +5,24 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <map>
+#include "CSystem.h"
+#include "gmock/gmock.h"
 
 class CThPool: public IThPool
 {
 private:
     pthread_t *m_threads;
     int m_numThreads;
-    CWorkQueue m_oWorkQueue;
+    IWorkQueue *m_oWorkQueue;
+    ISystem *m_sys;
+    FRIEND_TEST(AddTaskTest, ThPool);
 
 public:
-    CThPool(int);
-    ~CThPool();
+    CThPool(int, IWorkQueue*, ISystem *);
+    virtual ~CThPool();
     int init();
     int clear();
-    void addTask(ITask*);
+    int addTask(ITask*);
     void finish();
     bool hasWork();
     void waitForCompletion();

@@ -68,18 +68,14 @@ void CConnectionHandler::run()
 
 int CConnectionHandler::socketCreator()
 {
-    cout<<"in sock"<<endl;
     m_socketfd=m_sys->sockets(AF_INET, SOCK_STREAM, 0);
-    cout<<"sock done"<<endl;
     if(m_socketfd < 0)
     {
-        cout<<"in ret unsuc"<<endl;
         std::cerr<<"ERROR: opening socket"<<std::endl;
         return UNSUCCESFUL;
     }
     else
     {
-        cout<<"in ret succes"<<endl;
         return SUCCES;
     }
 }

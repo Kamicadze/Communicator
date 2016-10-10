@@ -48,3 +48,17 @@ int CSystem::writes(int sock, const void* buff, size_t size)
     retValue=write(sock, buff, size);
     return retValue;
 }
+
+int CSystem::pthread_creates(pthread_t *thread , const pthread_attr_t *attr, void* (*start_rout) (void*), void *arg)
+{
+    int retValue;
+    retValue=pthread_create(thread, attr, start_rout, arg);
+    return retValue;
+}
+
+int CSystem::pthread_joins(pthread_t thread, void ** retval)
+{
+    int retValue;
+    retValue=pthread_join(thread, retval);
+    return retValue;
+}

@@ -6,7 +6,7 @@ class IThPool
     virtual ~IThPool(){}
     virtual int init(){}
     virtual int clear(){}
-    virtual void addTask(ITask*)=0;
+    virtual int addTask(ITask*)=0;
     virtual void finish()=0;
     virtual bool hasWork()=0;
     virtual void waitForCompletion()=0;

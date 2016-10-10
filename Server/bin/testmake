@@ -1,4 +1,4 @@
-g++ -std=c++11 -pthread ../tests/src/TConnectionHandler.cpp ../src/CConnectionHandler.cpp ../src/CDatabaseHandler.cpp ../src/CMessageHandler.cpp \
+g++ -std=c++11 -pthread ../tests/src/TThPool.cpp ../src/CThPool.cpp  \
 ../src/Globals.cpp \
 -isystem ../../Common \
 -isystem ../tests/inc \

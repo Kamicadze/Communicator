@@ -21,7 +21,7 @@ class CConnectionHandler: public IConnectionHandler, public ITask
     public: 
         CConnectionHandler(int, IThPool*, int);
         CConnectionHandler(int, IThPool*, ISystem* );
-        CConnectionHandler(int, int, SFrame, IDatabaseHandler*);
+        CConnectionHandler(int, int, SFrame, IDatabaseHandler*, ISystem*);
         CConnectionHandler(){};
         virtual ~CConnectionHandler();
         int binding(sockaddr_in&);
@@ -57,5 +57,6 @@ enum ESwitchDataTypes
 enum EErrorHandlers
 {
     SUCCES=0,
-    UNSUCCESFUL=1
+    UNSUCCESFUL=1,
+    ENDOFSOCK=2
 };

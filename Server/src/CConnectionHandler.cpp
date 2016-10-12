@@ -15,6 +15,7 @@
 #include <sstream>
 #include "CMessageHandler.h"
 #include "CDatabaseHandler.h"
+#include <errno.h>
 using namespace std;
 
 
@@ -34,9 +35,10 @@ CConnectionHandler::CConnectionHandler(int flag, IThPool *tp, ISystem *sys)
 
 }
 
-CConnectionHandler::CConnectionHandler(int flag, int clisock, SFrame cliFrame, IDatabaseHandler *dbh)
+CConnectionHandler::CConnectionHandler(int flag, int clisock, SFrame cliFrame, IDatabaseHandler *dbh, ISystem *sys)
     :m_flag(flag),
     m_clisocket(clisock),
+    m_sys(sys),
     m_clientFrame(cliFrame),
     m_dbh(dbh)
     
@@ -125,10 +127,15 @@ int CConnectionHandler::accepting(int &newsockfd, sockaddr_in &cli_addr, int &cl
 
 int CConnectionHandler::recving(SFrame &cliFrame, int &newsockfd)
 {
-    if(0>(m_sys->recvs(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL)))
+    int retVal=m_sys->recvs(newsockfd, &cliFrame, sizeof(cliFrame), MSG_WAITALL);
+    if(0>retVal)
     {  
         std::cerr<<"ERROR: message not recived"<<std::endl;
         return UNSUCCESFUL;
+    }
+    else if(0==retVal)
+    {
+        return ENDOFSOCK;
     }
     else
     {
@@ -173,9 +180,9 @@ int CConnectionHandler::handshake()
 
         if(false==endOfServerFlag && SUCCES==retValue)
         {
-            if(SUCCES==recving(cliFrame, newsockfd))
-            {
-                CConnectionHandler *ch=new CConnectionHandler(CLIENTHANDLING, newsockfd, cliFrame, o_dbh);
+//            if(SUCCES==recving(cliFrame, newsockfd))
+//            {
+                CConnectionHandler *ch=new CConnectionHandler(CLIENTHANDLING, newsockfd, cliFrame, o_dbh, m_sys);
 
                 if(ch && o_dbh)
                 {
@@ -186,7 +193,7 @@ int CConnectionHandler::handshake()
                     delete ch;
                     delete o_dbh;
                 }
-            }
+//            }
         }
         newsockfd=0;
 
@@ -201,14 +208,20 @@ int CConnectionHandler::handshake()
 }
 int CConnectionHandler::clientHandler()
 {
-    string buff;
+    int retVal=recving(m_clientFrame, m_clisocket);
 
+    int result;
+    fd_set readset;
+
+    string buff;
+    
     string tmp;
     int controlFlag=SUCCES;
     int dt=0;
-    string login, password;
-    CMessageHandler o_mh;
-    while(false==endOfServerFlag)
+    string login, password, gLogin;
+
+    CMessageHandler o_mh(m_sys);
+    while(false==endOfServerFlag && 0==retVal)
     {
         istringstream ss;
         buff=reinterpret_cast<char*>(m_clientFrame.m_messageData);
@@ -225,6 +238,7 @@ int CConnectionHandler::clientHandler()
                 login.clear();
                 password.clear();
                 ss >> login >> password;
+                gLogin=login;
 
 
                 if((true==m_dbh->authenticate(login, password))&&(online.find(login)==online.end()))
@@ -348,6 +362,42 @@ int CConnectionHandler::clientHandler()
         }
         buff.clear();
         memset(&m_clientFrame ,0 ,sizeof(m_clientFrame) );
+        do {
+            FD_ZERO(&readset);
+            FD_SET(m_clisocket, &readset);
+            result=select(m_clisocket +1, &readset, NULL, NULL, NULL);
+
+        } while(-1 == result && EINTR==errno && false==endOfServerFlag);
+        if(false==endOfServerFlag)
+        {
+
+            if(0<result)
+            {
+                if(FD_ISSET(m_clisocket, &readset))
+                {
+                    result=recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL);
+                    if(0==result)
+                    {
+                        break;
+
+                    }
+                    else
+                    {
+
+                    }
+
+                }
+            }
+            else if(result < 0)
+            {
+                //TODO:ERROR handling
+            }
+        }
+        else
+        {
+
+            break;
+        }
         //        rv=select(m_clisocket, &readfds, NULL, NULL, &tv);
         //        if(-1==rv)
         //        {
@@ -364,17 +414,24 @@ int CConnectionHandler::clientHandler()
         //        }
         //        else
         //        {
-        if(false==endOfServerFlag)
-        {
-            recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL);
-        }
+        /*if(false==endOfServerFlag)
+          {
+          if(0==recv(m_clisocket, &m_clientFrame, sizeof(m_clientFrame), MSG_WAITALL))
+          {
+          break;
+          }
+          }*/
         //        }
     }
-
-    tmp.clear();
-    tmp="Server Terminated!";
-    writeAnswer(tmp, 66);
-    std::cout<<"sent"<<std::endl;
+    /*
+       if(true==endOfServerFlag)
+       {
+       tmp.clear();
+       tmp="Server Terminated!";
+       writeAnswer(tmp, 66);
+       std::cout<<"sent"<<std::endl;
+       }*/
+    online.erase(gLogin);
     close(m_clisocket);
     std::cout<<"closed"<<std::endl;
     return 0;

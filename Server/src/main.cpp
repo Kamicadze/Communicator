@@ -26,7 +26,18 @@ int main()
     sigemptyset(&sa.sa_mask);
     static const int THNUMBER=10;
     CSystem *sys=new CSystem();
+    if(!sys)
+    {
+        std::cerr<<"ERROR: Allocation problem: sys"<<std::endl;
+        return 1;
+    }
     CWorkQueue *wq=new CWorkQueue();
+    if(!wq)
+    {
+        std::cerr<<"ERROR: Allocation problem: wq"<<std::endl;
+        return 1;
+    }
+
     CThPool *tp= new CThPool(THNUMBER, wq, sys);
 
     if(tp)
@@ -34,8 +45,6 @@ int main()
     tp->init();
 
 
-        if(sys)
-        {
 
             CConnectionHandler *ch=new CConnectionHandler(2, tp, sys);
 
@@ -49,7 +58,6 @@ int main()
             {
                 std::cerr<<"Error: Memory not allocated"<<std::endl;
             }
-        }
     }
     else
     {

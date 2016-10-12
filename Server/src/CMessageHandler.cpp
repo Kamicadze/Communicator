@@ -7,41 +7,101 @@
 CMessageHandler::CMessageHandler()
 {}
 
+    CMessageHandler::CMessageHandler(ISystem* sys)
+:m_sys(sys)
+{}
+
 CMessageHandler::~CMessageHandler()
 {}
 
-enum CMessageHandler::ChatHandlers_t: int
+int CMessageHandler::recving(int sock, SFrame &frame)
 {
-    BROADCAST=3,
-    CHAT=4,
-    EXIT=5,
-    INVITATION=6,
-    NEWINVITATION=42,
-    QUITINGUSER=45,
-    NEWUSERJOINED=46,
-    USERSLIST=47
+    int result;
+    fd_set readset;
 
-    
-};
+    do {
+        FD_ZERO(&readset);
+        FD_SET(sock, &readset);
+        result=select(sock +1, &readset, NULL, NULL, NULL);
 
-void CMessageHandler::sendToAll(SFrame frame)
+    } while(-1 == result && EINTR==errno && false==endOfServerFlag);
+    if(false==endOfServerFlag)
+    {
+
+        if(0<result)
+        {
+            if(FD_ISSET(sock, &readset))
+            {
+                result=m_sys->recvs(sock, &frame, sizeof(frame), MSG_WAITALL);
+                if(0==result)
+                {
+                    return 2;
+                }
+                else
+                {
+                    return 0;
+                }
+
+            }
+        }
+        else if(result < 0)
+        {
+            std::cerr<<"ERROR: message not recived"<<std::endl;
+
+            return 1;
+        }
+    }
+    return 1;
+}
+
+int CMessageHandler::writing(int sock, const void* buff, size_t size)
+{
+    if(0>(m_sys->writes(sock, buff, size)))
+    {  
+        std::cerr<<"ERROR: message was not send"<<std::endl;
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+}
+
+int CMessageHandler::sendToAll(SFrame frame)
 {
     SFrame o_allFrame;
+    o_allFrame=frame;
+    int retVal=0;
+
     for(auto it=broad.begin(); it!=broad.end(); ++it)
     {
         if(it->first!=frame.m_CID)
         {
 
-            o_allFrame=frame;
             strcpy(o_allFrame.m_DCID, it->first.c_str());
-            o_allFrame.m_dataType=BROADCAST;
+            o_allFrame.m_dataType=BROADCASTMSG;
             o_allFrame.m_destenationPort=it->second;
             //TODO: add a possibility to add write to task queue
-            write(it->second, &o_allFrame, sizeof(o_allFrame));
+            if(1==writing(it->second, &o_allFrame, sizeof(o_allFrame)))
+            {
+                ++retVal;
+                std::string buff="Cannot write to user: ";
+                buff.append(it->first);
+                strcpy(frame.m_messageData, buff.c_str());
+                int porto=broad[frame.m_CID];
+                //TODO sending to host info bout error
+                if(1==writing(porto, &frame, sizeof(frame)))
+                {
+                    ++retVal;
+                    std::cerr<<"ERROR: writing to client in broadcast"<<std::endl;
+                }
+            }
 
         }
 
     }
+    return retVal;
 }
 
 void CMessageHandler::broadcast(int port, std::string login)
@@ -51,15 +111,15 @@ void CMessageHandler::broadcast(int port, std::string login)
     broad[login]=port;
     memset(&o_frame, 0, sizeof(o_frame));
     int dt=0;
-    while(1)
+    while(false==endOfServerFlag)
     {
-        recv(port, &o_frame, sizeof(o_frame), MSG_WAITALL);
+        recving(port, o_frame);
         dt=static_cast<int>(o_frame.m_dataType);
-        if(dt==BROADCAST)
+        if(dt==BROADCASTMSG)
         {
             sendToAll(o_frame);
         }
-        else if(dt==EXIT)
+        else if(dt==EXITMSG)
         {
             break;
         }
@@ -73,8 +133,9 @@ void CMessageHandler::broadcast(int port, std::string login)
 
 }
 
-void CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock)
+int CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock)
 {
+    int retVal=0;
     chatRooms[cliFrame.m_CID]=cliSock;  
     std::istringstream ss;
     ss.str(cliFrame.m_messageData);
@@ -84,18 +145,43 @@ void CMessageHandler::createChatRoom(SFrame cliFrame, int cliSock)
 
     while(ss>>login)
     {
-        invFrame=cliFrame;
-        strcpy(invFrame.m_DCID, login.c_str());
-        invFrame.m_destenationPort=online[login];
-        sprintf(invFrame.m_messageData, "Invite");
-        invFrame.m_dataType=INVITATION; ///6 is invite type for user and join chat for server
-        write(invFrame.m_destenationPort, &invFrame, sizeof(invFrame));
+        if(online.find(login)!=online.end())
+        {
+            invFrame=cliFrame;
+            strcpy(invFrame.m_DCID, login.c_str());
+            invFrame.m_destenationPort=online[login];
+            sprintf(invFrame.m_messageData, "Invite");
+            invFrame.m_dataType=INVITATION; 
+            if(1==writing(invFrame.m_destenationPort, &invFrame, sizeof(invFrame)))
+            {
+                ++retVal;
+                std::string buff="Cannot write to user: ";
+                invFrame.m_dataType=EXITMSG; 
+
+                buff.append(login);
+                strcpy(invFrame.m_messageData, buff.c_str());
+                if(1==writing(cliSock, &invFrame, sizeof(invFrame)))
+                {
+                    ++retVal;
+                    std::cerr<<"ERROR: writing to client in broadcast"<<std::endl;
+                }
+            }
+        }
+        else
+        {
+            std::string buff=login;
+
+            buff.append(" is offline \n");
+            invFrame.m_dataType=EXITMSG; 
+            strcpy(invFrame.m_messageData, buff.c_str());
+            writing(cliSock, &invFrame, sizeof(invFrame));
+        }
     }
 
     hostHandler(cliFrame.m_CID, cliSock, nUsers);
 
 
-
+    return retVal;
 }
 
 void CMessageHandler::inviteAccept(std::string login, std::string host, int port)
@@ -104,21 +190,15 @@ void CMessageHandler::inviteAccept(std::string login, std::string host, int port
 
     if((chatRooms.end()!=chatRooms.find(host))&&(online.end()!=online.find(host)))
     {
-        //TODO: send information of accepting an invitation to host and get a map
+        // send information of accepting an invitation to host and get a map
         strcpy(frame.m_DCID, host.c_str());
         strcpy(frame.m_CID, login.c_str());
         frame.m_sourcePort=port;
         frame.m_destenationPort=online[host];
         sprintf(frame.m_messageData, "Invite accepted");
         frame.m_dataType=NEWUSERJOINED; 
-        write(frame.m_destenationPort, &frame, sizeof(frame));
-        //chat room data types:
-        //6- invite for user
-        //4- standart message
-        //5- exit
-        //45- erase
-        //42- reserved for invites(comming soon TM)
-        //46- invite accept
+        writing(frame.m_destenationPort, &frame, sizeof(frame));
+
         chatRoomHandler(login, port, host);
 
 
@@ -128,10 +208,7 @@ void CMessageHandler::inviteAccept(std::string login, std::string host, int port
         //TODO: send an information to user that the chat room is no longer enable
     }
 }
-//TODO: user only chat handler and seprate host only handler
-//host: -recives inv accept and sends reply with users list -whenever new user comes online he sends the rest information -when he exits sends info to all that they exit too
-//user: -gets his map -sends to all that he quits -do map staff
-//
+
 void CMessageHandler::chatRoomHandler(std::string login, int port, std::string host)
 {
     SFrame o_frame;
@@ -143,27 +220,27 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
     chat[login]=port;
 
 
-    while(1)
+    while(false==endOfServerFlag)
     {
-        recv(port, &o_frame, sizeof(o_frame), MSG_WAITALL);
+        recving(port, o_frame);
         dt=static_cast<int>(o_frame.m_dataType);
 
         if(CHAT==dt)
         {
             writeToChat(chat, o_frame);
         }
-        else if(EXIT==dt)//EXIT
+        else if(EXITMSG==dt)//EXIT
         {
             o_frame.m_dataType=QUITINGUSER;
             strcpy(o_frame.m_CID, login.c_str());
-            write(port, &o_frame, sizeof(o_frame));
+            writing(port, &o_frame, sizeof(o_frame));
             for(auto it=chat.begin(); it!=chat.end(); ++it)
             {
                 if(it->first!=login)
                 {
                     o_frame.m_destenationPort=it->second;
                     //TODO: add a possibility to add write to task queue
-                    write(it->second, &o_frame, sizeof(o_frame));
+                    writing(it->second, &o_frame, sizeof(o_frame));
                 }
             }
 
@@ -172,7 +249,16 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
 
         else if(QUITINGUSER==dt)//other user quit
         {
-            chat.erase(o_frame.m_CID);
+            if(host==o_frame.m_CID)
+            {
+                o_frame.m_dataType=64;
+                writing(port, &o_frame, sizeof(o_frame));
+                break;
+            }
+            else
+            {
+                chat.erase(o_frame.m_CID);
+            }
         }
         else if(NEWUSERJOINED==dt)//someone accepted an invite
         {
@@ -199,15 +285,11 @@ void CMessageHandler::chatRoomHandler(std::string login, int port, std::string h
 void CMessageHandler::hostHandler(std::string login, int port, std::string invs)
 {
 
-    //TODO:: start is host only, host have to send other list of users once again, or find other way to do this
-    //other way: in cli frame send host name as DCID and inv list i data
-
-
     SFrame o_frame;
     memset(&o_frame, 0, sizeof(o_frame));
     int dt=0;
     std::string nLogin, buff;
-    int nPort;
+
 
     std::map<std::string, int> chat;
     chat[login]=port;
@@ -221,9 +303,9 @@ void CMessageHandler::hostHandler(std::string login, int port, std::string invs)
         }
     }
 
-    while(1)
+    while(false==endOfServerFlag)
     {
-        recv(port, &o_frame, sizeof(o_frame), MSG_WAITALL);
+        recving(port, o_frame);
         dt=static_cast<int>(o_frame.m_dataType);
 
         if(NEWINVITATION==dt)
@@ -240,25 +322,25 @@ void CMessageHandler::hostHandler(std::string login, int port, std::string invs)
             inviteFrame.m_destenationPort=invitePort;
             sprintf(inviteFrame.m_messageData, "Invite");
 
-            write(invitePort, &inviteFrame, sizeof(inviteFrame));
+            writing(invitePort, &inviteFrame, sizeof(inviteFrame));
 
         }
         else if(CHAT==dt)
         {
             writeToChat(chat, o_frame);
         }
-        else if(EXIT==dt)//EXIT
+        else if(EXITMSG==dt)//EXIT
         {
             o_frame.m_dataType=QUITINGUSER;
             strcpy(o_frame.m_CID, login.c_str());
-            write(port, &o_frame, sizeof(o_frame));
+            writing(port, &o_frame, sizeof(o_frame));
             for(auto it=chat.begin(); it!=chat.end(); ++it)
             {
                 if(it->first!=login)
                 {
                     o_frame.m_destenationPort=it->second;
                     //TODO: add a possibility to add write to task queue
-                    write(it->second, &o_frame, sizeof(o_frame));
+                    writing(it->second, &o_frame, sizeof(o_frame));
                 }
             }
             chatRooms.erase(login);
@@ -289,13 +371,13 @@ void CMessageHandler::hostHandler(std::string login, int port, std::string invs)
                     chatList += it->first;
                     strcpy(ansFrame.m_DCID, it->first.c_str());
                     ansFrame.m_destenationPort=it->second;
-                    write(it->second, &ansFrame, sizeof(ansFrame));
+                    writing(it->second, &ansFrame, sizeof(ansFrame));
                 }
             }
 
             ansFrame.m_dataType=USERSLIST;
             strcpy(ansFrame.m_messageData, chatList.c_str());
-            write(o_frame.m_sourcePort, &ansFrame, sizeof(ansFrame));
+            writing(o_frame.m_sourcePort, &ansFrame, sizeof(ansFrame));
 
 
             chat[o_frame.m_CID]=online[o_frame.m_CID];
@@ -319,7 +401,7 @@ void CMessageHandler::writeToChat(std::map<std::string, int> &chat, SFrame frame
             chatFrame.m_dataType=CHAT;
             chatFrame.m_destenationPort=it->second;
             //TODO: add a possibility to add write to task queue
-            write(it->second, &chatFrame, sizeof(chatFrame));
+            writing(it->second, &chatFrame, sizeof(chatFrame));
 
         }
 

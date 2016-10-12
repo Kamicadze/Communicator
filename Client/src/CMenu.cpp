@@ -45,7 +45,7 @@ int CMenu::publicMenu(std::string login)
     std::cout<<"Communication has been started"<<std::endl<<std::endl;
     std::cout<<"You can type in your message with maximum of 149 characters"<<std::endl;
 
-    while(whileFlag)
+    while(whileFlag && 66!=flag)
     {
         std::getline(std::cin, buffer);
         if(149<buffer.length())
@@ -201,7 +201,7 @@ int CMenu::mainMenu(std::string login)
     CConnectionHandler ch;
     std::string buff;
 
-    while(retFlag!=0)
+    while(retFlag!=0 && 66!=flag)
     {
         std::cout<<"\033[2J\033[1;1H";
         std::cout<<"\t\t\t LOGGED AS "<<login<<std::endl<<std::endl;
@@ -286,6 +286,10 @@ int CMenu::mainMenu(std::string login)
                     break;
             }
         }
+    }
+    if(66==flag)
+    {
+        std::cout<<"You Have Been Disconnected From The Server"<<std::endl;
     }
 
     return 0;
@@ -465,8 +469,13 @@ int CMenu::chatMenu(std::string login)
     std::cout<<"Communication has been started"<<std::endl<<std::endl;
     std::cout<<"You can type in your message with maximum of 149 characters"<<std::endl;
 
-    while(whileFlag)
+    while(whileFlag && 66!=flag)
     {
+        if(true==flagChanged && 64==flag)
+        {
+
+            break;
+        }
         std::getline(std::cin, buffer);
         if(149<buffer.length())
         {
@@ -544,7 +553,10 @@ int CMenu::chatMenu(std::string login)
 
         }
     }
+    if(66!=flag)
+    {
     flag=0;
+    }
     return 0;
 
 
@@ -626,7 +638,7 @@ int CMenu::startingMenu()
     std::string buff, login;
 
 
-    while(sucFlag!=0)
+    while(0!=sucFlag && 66!=flag)
     {
         int opFlag=0;
         //czyścić buffor
@@ -685,6 +697,10 @@ int CMenu::startingMenu()
 
         }
     }
+    if(66==flag)
+    {
+        std::cout<<"You have been disconnected from the server"<<std::endl;
+    }
     return 0;
 }
 
@@ -705,15 +721,12 @@ int CMenu::loggingMenu()
     std::getline(std::cin, password);
     std::cout<<"Please wait. Authentication in progress"<<std::endl;
 
-    std::cout<<"log: "<<login;
-    std::cout<<"pass: "<<password;
-
     msg=login;
     msg.append("  ");
     msg.append(password);
     SFrame frame;
     CConnectionHandler ch;
-    std::cout<<"socket:: "<<sockfd<<std::endl;
+
     frame=ch.frameCreator(1, msg, login, sockfd);
     if(0>(write(sockfd, &frame, sizeof(frame))))
     {

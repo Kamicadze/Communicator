@@ -82,6 +82,7 @@ SFrame CConnectionHandler::frameCreator(int dataType, std::string messageData, s
 void CConnectionHandler::listening(int socketfd)
 {
     char blue[]={0x1b, '[', '1', ';', '3', '4', 'm', 0 };
+    char red[]={0x1b, '[', '1', ';', '3', '1', 'm', 0 };
     char normal[]={0x1b, '[', '0', ';', '3', '9', 'm', 0};
     SFrame frame;
     memset(&frame, 0, sizeof(frame));
@@ -90,7 +91,11 @@ void CConnectionHandler::listening(int socketfd)
 
     while(workFlag)
     {
-        recv(socketfd, &frame, sizeof(frame), MSG_WAITALL);
+        if(0==recv(socketfd, &frame, sizeof(frame), MSG_WAITALL))
+        {
+            flag=66;
+            break;
+        }
         dt=static_cast<int>(frame.m_dataType);
 
         switch(dt)
@@ -124,7 +129,7 @@ void CConnectionHandler::listening(int socketfd)
 
             case 5: //error/quiting
                 //TODO: Secure way of quiting
-                std::cout<<frame.m_messageData<<std::endl;
+                std::cout<<red<<frame.m_messageData<<normal<<std::endl;
 
 
                 flag=5;
@@ -132,7 +137,7 @@ void CConnectionHandler::listening(int socketfd)
                 break;       
 
             case 6:
-                std::cout<<"You got an invite "<<std::endl;
+                std::cout<<red<<"You got an invite "<<normal<<std::endl;
                 pendingInvites.push_back(frame.m_CID);
 
                 break;
@@ -167,11 +172,22 @@ void CConnectionHandler::listening(int socketfd)
 
             case 66:
                 std::cout<<frame.m_messageData<<std::endl;
-                std::cout<<"Connection Lost"<<std::endl;
+                std::cout<<red<<"Connection Lost"<<normal<<std::endl;
                 workFlag=0;
                 close(socketfd);
 
                 break;
+
+            case 64:
+                std::cout<<red<<"Host has left the chat"<<std::endl;
+                std::cout<<"You will be disconnected from the chat"<<std::endl;
+                std::cout<<"Press Enter to continue"<<normal<<std::endl;
+
+                flag=64;
+                flagChanged = true;
+                break;
+
+
 
             default:
                 break;

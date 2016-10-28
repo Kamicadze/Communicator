@@ -1,7 +1,7 @@
-g++ -std=c++11 -pthread ../tests/src/TMessageHandler.cpp ../src/CMessageHandler.cpp  \
-../src/Globals.cpp \
+g++ -std=c++11 -pthread ../tests/src/TDatabaseHandler.cpp ../src/CDatabaseHandler.cpp  \
+../src/Globals.cpp ../src/CSystem.cpp ../src/CMessageHandler.cpp  \
 -isystem ../../Common \
 -isystem ../tests/inc \
 -isystem ../inc \
 -isystem ../pub \
-../../Common/libgtest.a ../../Common/libgmock.a
+../../Common/libgtest.a ../../Common/libgmock.a -o DBHTest
